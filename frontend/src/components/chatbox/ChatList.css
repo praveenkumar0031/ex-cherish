@@ -1,0 +1,74 @@
+.chatlist {
+  padding: 15px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: #f8f9fa;
+}
+
+.chatlist h3 {
+  margin: 0 0 10px;
+  font-size: 1.1rem;
+  text-align: center;
+  color: #333;
+}
+
+.add-chat {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 15px;
+}
+
+.add-chat input {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.add-chat button {
+  padding: 6px 10px;
+  background-color: #0078ff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.add-chat button:hover {
+  background-color: #005fcc;
+}
+
+.chatlist ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.chatlist li {
+  padding: 10px;
+  margin-bottom: 6px;
+  color: #333;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.chatlist li:hover {
+  background-color: #f0f0f0;
+}
+
+.chatlist li.active {
+  background-color: #0078ff;
+  color: white;
+  font-weight: bold;
+}
+.addbox{
+  border-radius: 6px;
+  background-color: #ccc;
+}

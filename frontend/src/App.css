@@ -1,0 +1,8 @@
+.app-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  
+  background: #eef2f3;
+  font-family: Arial, sans-serif;
+}
