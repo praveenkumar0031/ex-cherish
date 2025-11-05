@@ -16,6 +16,7 @@ const EditProfile = ({ user }) => {
   const [message, setMessage] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   // 🧩 Load user profile
   useEffect(() => {
@@ -24,7 +25,7 @@ const EditProfile = ({ user }) => {
       .get(`http://localhost:5000/api/profile/${user._id}`)
       .then((res) => {
         setProfile(res.data);
-        setImagePreview(res.data.profilePic);
+        setImagePreview(res.data.profilePic || null);
       })
       .catch((err) => console.error(err));
   }, [user]);
@@ -62,19 +63,23 @@ const EditProfile = ({ user }) => {
   // 💾 Save profile
   const handleSave = async () => {
     try {
+      setSaving(true);
+
+      // Upload image first if needed
       let imageUrl = await uploadImage();
       if (!imageUrl && imagePreview) imageUrl = imagePreview;
 
-      const formData = new FormData();
-      formData.append("dob", profile.dob);
-      formData.append("mobile", profile.mobile);
-      formData.append("interestedAreas", profile.interestedAreas.join(","));
-      if (imageUrl) formData.append("profileImage", imageUrl);
+      // Prepare JSON payload for backend
+      const updatedProfile = {
+        dob: profile.dob,
+        mobile: profile.mobile,
+        interestedAreas: profile.interestedAreas,
+        profilePic: imageUrl, // backend should accept this field
+      };
 
       await axios.put(
         `http://localhost:5000/api/profile/${user._id}`,
-        formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
+        updatedProfile
       );
 
       setMessage("✅ Profile updated successfully!");
@@ -82,9 +87,12 @@ const EditProfile = ({ user }) => {
     } catch (err) {
       console.error(err);
       setMessage("❌ Failed to update profile.");
+    } finally {
+      setSaving(false);
     }
   };
 
+  // 🎯 Add new interest
   const handleAddInterest = () => {
     if (newInterest.trim()) {
       setProfile({
@@ -103,7 +111,11 @@ const EditProfile = ({ user }) => {
         </h2>
 
         {message && (
-          <p className="text-center mb-4 text-sm font-medium text-green-600">
+          <p
+            className={`text-center mb-4 text-sm font-medium ${
+              message.startsWith("✅") ? "text-green-600" : "text-red-600"
+            }`}
+          >
             {message}
           </p>
         )}
@@ -133,9 +145,7 @@ const EditProfile = ({ user }) => {
               onChange={handleImageChange}
             />
           </div>
-          {uploading && (
-            <p className="text-xs text-gray-500 mt-2">Uploading image...</p>
-          )}
+          {uploading && <p className="text-xs text-gray-500 mt-2">Uploading image...</p>}
         </div>
 
         {/* 🧾 Form Fields */}
@@ -220,9 +230,14 @@ const EditProfile = ({ user }) => {
           {/* 💾 Save */}
           <button
             onClick={handleSave}
-            className="w-full mt-4 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition"
+            disabled={saving || uploading}
+            className={`w-full mt-4 py-2 rounded-lg text-white ${
+              saving || uploading
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-green-600 hover:bg-green-700 transition"
+            }`}
           >
-            Save Changes
+            {saving ? "Saving..." : "Save Changes"}
           </button>
         </div>
       </div>
