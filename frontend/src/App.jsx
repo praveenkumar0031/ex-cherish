@@ -7,7 +7,9 @@ import Dashboard from "./components/landing/DashBoard";
 import Profile from "./components/profile/Profile";
 import EditProfile from "./components/profile/EditProfile";
 import Navbar from "./components/navbar/Navbar";
+import Connect from "./components/room/Connect";
 import "./App.css";
+import Home from "./pages/Home.jsx";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -56,8 +58,17 @@ function App() {
               element={user ? <Dashboard user={user} /> : <Navigate to="/login" replace />}
             />
             <Route
+              path="/room"
+              element={user ? <Connect user={user} /> : <Navigate to="/login" replace />}
+            />
+            <Route
               path="/chat"
               element={user ? <Chat user={user} /> : <Navigate to="/login" replace />}
+            />
+            
+            <Route
+              path="/home"
+              element={user ? <Home user={user} /> : <Navigate to="/login" replace />}
             />
             <Route
               path="/profile"

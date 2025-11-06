@@ -55,7 +55,7 @@ const DashBoard = () => {
               onClick={() => navigate("/learn")}
               className="bg-white text-blue-700 font-semibold px-6 py-3 rounded-lg hover:bg-blue-100 transition"
             >
-              Explore Courses
+              Explore
             </button>
             <button
               onClick={() => navigate("/chat")}
@@ -97,11 +97,11 @@ const DashBoard = () => {
           </div>
         </section>
 
-        {/* 📚 Demo Courses */}
+        {/* 📚 check outs */}
         <section>
           <div className="flex items-center gap-3 mb-6">
             <BookOpen className="text-green-600" size={28} />
-            <h2 className="text-3xl font-semibold text-gray-800">Demo Courses</h2>
+            <h2 className="text-3xl font-semibold text-gray-800">Check Outs</h2>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -124,7 +124,7 @@ const DashBoard = () => {
                     onClick={() => navigate("/learn")}
                     className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700 transition w-full"
                   >
-                    View Course
+                    View 
                   </button>
                 </div>
               </div>

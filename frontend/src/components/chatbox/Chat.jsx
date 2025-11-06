@@ -1,14 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import ChatList from "./ChatList";
 import MessageInput from "./MessageInput";
 import { io } from "socket.io-client";
-import "./Chat.css";
 
 const socket = io("http://localhost:5000"); // ✅ Connect to backend Socket.IO
 
 function Chat({ user }) {
   const [selectedChat, setSelectedChat] = useState(null);
   const [messages, setMessages] = useState([]);
+  const messagesEndRef = useRef(null);
 
   // ✅ Join room when user logs in
   useEffect(() => {
@@ -33,7 +33,6 @@ function Chat({ user }) {
   // ✅ Listen for new messages via Socket.IO
   useEffect(() => {
     socket.on("receiveMessage", (message) => {
-      // Only add if the message is from or to the current chat
       if (
         message.sender === selectedChat ||
         message.receiver === selectedChat
@@ -45,6 +44,11 @@ function Chat({ user }) {
     return () => socket.off("receiveMessage");
   }, [selectedChat]);
 
+  // Scroll to bottom automatically
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
   // ✅ Send message (API + Socket)
   const sendMessage = async (msg) => {
     if (!msg.trim() || !selectedChat) return;
@@ -55,60 +59,76 @@ function Chat({ user }) {
       text: msg,
     };
 
-    // 1️⃣ Save message to DB
     await fetch("/api/messages/send", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(newMsg),
     });
 
-    // 2️⃣ Emit through socket for real-time delivery
     socket.emit("sendMessage", newMsg);
-
-    // 3️⃣ Update local UI instantly
     setMessages((prev) => [...prev, newMsg]);
   };
 
   return (
-    <div className="chat-container">
-      <aside className="chat-list-section">
+    <div className="flex h-screen bg-gray-100">
+      {/* Sidebar */}
+      <aside className="w-80 bg-white shadow-md rounded-r-lg p-4 flex-shrink-0">
         <ChatList
           setSelectedChat={setSelectedChat}
           selectedChat={selectedChat}
         />
       </aside>
 
-      <main className="chat-main">
-        <header className="chat-header">
+      {/* Main Chat */}
+      <main className="flex-1 flex flex-col">
+        {/* Header */}
+        <header className="bg-blue-600 text-white px-6 py-4 rounded-b-lg shadow-md">
           {selectedChat ? (
-            <>Chat with <strong>{ selectedChat}</strong></>
+            <h2 className="text-lg font-semibold">
+              Chat with <span className="font-bold">{selectedChat}</span>
+            </h2>
           ) : (
-            <>Welcome, {user.username}</>
+            <h2 className="text-lg font-semibold">Welcome, {user.username}</h2>
           )}
         </header>
 
-        <div className="chat-messages">
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-3 bg-gray-50">
           {selectedChat ? (
             messages.length > 0 ? (
               messages.map((msg, idx) => (
                 <div
                   key={idx}
-                  className={`message ${
-                    msg.sender === user.username ? "sent" : "received"
+                  className={`flex ${
+                    msg.sender === user.username ? "justify-end" : "justify-start"
                   }`}
                 >
-                  <strong>{msg.sender}: </strong> {msg.text}
+                  <div
+                    className={`max-w-xs px-4 py-2 rounded-xl shadow ${
+                      msg.sender === user.username
+                        ? "bg-blue-600 text-white rounded-br-none"
+                        : "bg-white text-gray-800 rounded-bl-none"
+                    }`}
+                  >
+                    <strong>{msg.sender}: </strong> {msg.text}
+                  </div>
                 </div>
               ))
             ) : (
-              <p className="no-messages">No messages yet</p>
+              <p className="text-center text-gray-400 mt-4">No messages yet</p>
             )
           ) : (
-            <p className="no-chat">Select a chat to start messaging</p>
+            <p className="text-center text-gray-400 mt-4">Select a chat to start messaging</p>
           )}
+          <div ref={messagesEndRef} />
         </div>
 
-        {selectedChat && <MessageInput onSend={sendMessage} />}
+        {/* Input */}
+        {selectedChat && (
+          <div className="bg-white p-4 shadow-inner flex gap-2">
+            <MessageInput onSend={sendMessage} />
+          </div>
+        )}
       </main>
     </div>
   );
