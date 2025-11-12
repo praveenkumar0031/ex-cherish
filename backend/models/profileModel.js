@@ -10,6 +10,7 @@ const profileSchema = new mongoose.Schema(
     },
     dob: { type: String },
     mobile: { type: String },
+    credit: { type: mongoose.Schema.Types.Decimal128, default: 0.0 },
     interestedAreas: { type: [String] },
   },
   { timestamps: true }

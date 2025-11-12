@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { User, Calendar, Phone, Star } from "lucide-react";
+import { User, Calendar, Phone, Star, Coins } from "lucide-react";
 
 const Profile = ({ user }) => {
   const [profile, setProfile] = useState(null);
@@ -20,6 +20,9 @@ const Profile = ({ user }) => {
   ).length;
 
   const completion = Math.round((filledFields / 4) * 100);
+
+  // ✅ Ensure credit is numeric before using .toFixed()
+  const creditValue = Number(profile.credit) || 0;
 
   return (
     <div className="flex flex-col items-center py-10 px-4">
@@ -46,7 +49,7 @@ const Profile = ({ user }) => {
           <p className="text-gray-500">{profile.email}</p>
         </div>
 
-        {/* ✅ Progress Bar */}
+        {/* ✅ Profile Completion */}
         <div className="mb-8">
           <h3 className="text-gray-700 font-medium mb-2">
             Profile Completion: {completion}%
@@ -59,6 +62,15 @@ const Profile = ({ user }) => {
               style={{ width: `${completion}%` }}
             ></div>
           </div>
+        </div>
+
+        {/* ✅ Credit Score Section */}
+        <div className="flex items-center gap-3 mb-6">
+          <Coins className="text-orange-500" size={20} />
+          <span className="text-gray-800 font-semibold">
+            Credit Score:{" "}
+            <span className="text-blue-600">{creditValue.toFixed(2)}</span>
+          </span>
         </div>
 
         {/* ✅ Profile Details */}
