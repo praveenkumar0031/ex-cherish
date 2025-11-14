@@ -2,14 +2,13 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Sparkles, User, LogOut, Settings } from "lucide-react";
 
-const Navbar = () => {
-  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("user")));
+const Navbar = ({ user, setUser }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef();
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ✅ Automatically update user state if login/logout happens in another tab or re-render
+  // Sync user when login/logout happens
   useEffect(() => {
     const syncUser = () => {
       const storedUser = JSON.parse(localStorage.getItem("user"));
@@ -19,7 +18,7 @@ const Navbar = () => {
     return () => window.removeEventListener("storage", syncUser);
   }, []);
 
-  // ✅ Close dropdown if clicked outside
+  // Close dropdown if clicked outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -30,17 +29,20 @@ const Navbar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Logout
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     setUser(null);
-    navigate("/login");
+
+    navigate("/home");
   };
 
   return (
     <nav className="bg-white shadow-md sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-        {/* 🌟 Logo / Brand */}
+
+        {/* LOGO */}
         <div
           className="flex items-center gap-2 cursor-pointer select-none"
           onClick={() => navigate("/")}
@@ -49,43 +51,56 @@ const Navbar = () => {
           <h1 className="text-xl font-bold text-gray-800">Ex-cherish</h1>
         </div>
 
-        {/* 🔗 Navigation Links */}
-        <div className="hidden md:flex space-x-8 font-medium text-gray-700">
-          <button
-            onClick={() => navigate("/home")}
-            className={`hover:text-blue-600 transition ${
-              location.pathname === "/home" ? "text-blue-600 font-semibold" : ""
-            }`}
-          >
-            Home
-          </button>
-          <button
-            onClick={() => navigate("/explore")}
-            className={`hover:text-blue-600 transition ${
-              location.pathname === "/explore" ? "text-blue-600 font-semibold" : ""
-            }`}
-          >
-            Explore
-          </button>
-          <button
-            onClick={() => navigate("/chat")}
-            className={`hover:text-blue-600 transition ${
-              location.pathname === "/chat" ? "text-blue-600 font-semibold" : ""
-            }`}
-          >
-            Chat
-          </button>
-          <button
-            onClick={() => navigate("/room")}
-            className={`hover:text-blue-600 transition ${
-              location.pathname === "/room" ? "text-blue-600 font-semibold" : ""
-            }`}
-          >
-            Connect
-          </button>
-        </div>
+        {/* NAV LINKS – visible only when user is logged in */}
+        {user && (
+          <div className="hidden md:flex space-x-8 font-medium text-gray-700">
+            <button
+              onClick={() => navigate("/home")}
+              className={`hover:text-blue-600 transition ${
+                location.pathname === "/home"
+                  ? "text-blue-600 font-semibold"
+                  : ""
+              }`}
+            >
+              Home
+            </button>
 
-        {/* 👤 User / Auth Section */}
+            <button
+              onClick={() => navigate("/dashboard")}
+              className={`hover:text-blue-600 transition ${
+                location.pathname === "/explore"
+                  ? "text-blue-600 font-semibold"
+                  : ""
+              }`}
+            >
+              Explore
+            </button>
+
+            <button
+              onClick={() => navigate("/chat")}
+              className={`hover:text-blue-600 transition ${
+                location.pathname === "/chat"
+                  ? "text-blue-600 font-semibold"
+                  : ""
+              }`}
+            >
+              Chat
+            </button>
+
+            <button
+              onClick={() => navigate("/room")}
+              className={`hover:text-blue-600 transition ${
+                location.pathname === "/room"
+                  ? "text-blue-600 font-semibold"
+                  : ""
+              }`}
+            >
+              Connect
+            </button>
+          </div>
+        )}
+
+        {/* USER / LOGIN SECTION */}
         {user ? (
           <div className="relative" ref={dropdownRef}>
             <div
@@ -103,11 +118,15 @@ const Navbar = () => {
                   <User className="text-blue-600" size={22} />
                 </div>
               )}
-              <span className="text-gray-800 font-medium">{user.name || "User"}</span>
+
+              <span className="text-gray-800 font-medium">
+                {user.name || "User"}
+              </span>
             </div>
 
+            {/* DROPDOWN MENU */}
             {dropdownOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-lg overflow-hidden z-50 border border-gray-100">
+              <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-lg border border-gray-100 overflow-hidden z-50">
                 <button
                   onClick={() => {
                     setDropdownOpen(false);
@@ -117,6 +136,7 @@ const Navbar = () => {
                 >
                   <User size={18} /> Profile
                 </button>
+
                 <button
                   onClick={() => {
                     setDropdownOpen(false);
@@ -126,6 +146,7 @@ const Navbar = () => {
                 >
                   <Settings size={18} /> Settings
                 </button>
+
                 <button
                   onClick={handleLogout}
                   className="flex items-center gap-2 w-full px-4 py-2 text-gray-700 hover:bg-blue-50"

@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useRef } from "react";
 import io from "socket.io-client";
 import axios from "axios";
+import { Users } from "lucide-react";
 
-const ENDPOINT = "http://localhost:5000"; // backend URL
+const ENDPOINT = "http://localhost:5000";
 let socket;
 
 const Connect = () => {
@@ -18,6 +19,7 @@ const Connect = () => {
   const token = localStorage.getItem("token");
   const config = { headers: { Authorization: `Bearer ${token}` } };
 
+  // socket connection
   useEffect(() => {
     socket = io(ENDPOINT, { auth: { token } });
 
@@ -28,7 +30,7 @@ const Connect = () => {
     return () => socket.disconnect();
   }, []);
 
-  // Scroll chat to bottom
+  // auto scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -54,7 +56,13 @@ const Connect = () => {
 
   const createRoom = async () => {
     if (!roomName.trim()) return;
-    const res = await axios.post(`${ENDPOINT}/api/rooms/create`, { name: roomName }, config);
+
+    const res = await axios.post(
+      `${ENDPOINT}/api/rooms/create`,
+      { name: roomName },
+      config
+    );
+
     setRooms((prev) => [res.data, ...prev]);
     setRoomName("");
   };
@@ -72,8 +80,8 @@ const Connect = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-6">
-      {/* Room creation */}
+    <div className="max-w-7xl mx-auto p-6 space-y-6">
+      {/* Create Room */}
       <div className="flex gap-2">
         <input
           value={roomName}
@@ -85,32 +93,55 @@ const Connect = () => {
           onClick={createRoom}
           className="bg-blue-600 text-white px-4 rounded hover:bg-blue-700 transition"
         >
-          Create Room
+          Create
         </button>
       </div>
 
-      {/* Room list as cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+      {/* Rooms Section Title */}
+      <h2 className="text-3xl font-semibold text-gray-800 flex items-center gap-2">
+        <Users size={26} className="text-blue-600" /> Chat Rooms
+      </h2>
+
+      {/* Rooms Grid (Dashboard Style Cards) */}
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
         {rooms.map((room) => (
           <div
             key={room._id}
             onClick={() => joinRoom(room)}
-            className={`cursor-pointer p-4 rounded-lg shadow-md transition transform hover:scale-105 ${
-              currentRoom?._id === room._id
-                ? "bg-blue-600 text-white"
-                : "bg-white hover:bg-blue-50"
-            }`}
+            className={`cursor-pointer bg-white p-6 rounded-2xl shadow-lg 
+              hover:shadow-2xl transition transform hover:-translate-y-1 
+              border-l-4 ${
+                currentRoom?._id === room._id
+                  ? "border-blue-600 bg-blue-50"
+                  : "border-blue-400"
+              }`}
           >
-            <h4 className="font-semibold text-lg text-center">{room.name}</h4>
+            <h3 className="text-lg font-bold text-gray-800 mb-2 text-center">
+              {room.name}
+            </h3>
+
+            <div className="flex items-center justify-center text-sm text-gray-500 mb-4">
+              <Users size={16} className="mr-2 text-blue-500" />
+              {room.members || 0} Members
+            </div>
+
+            <button
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg w-full text-sm hover:bg-blue-700 transition"
+            >
+              Join Room
+            </button>
           </div>
         ))}
       </div>
 
-      {/* Chat */}
+      {/* Chat Section */}
       {currentRoom && (
-        <div className="bg-white rounded-lg shadow p-4 flex flex-col h-[60vh]">
-          <h3 className="font-bold text-xl mb-4 text-center border-b pb-2">{currentRoom.name}</h3>
+        <div className="bg-white rounded-lg shadow p-4 flex flex-col h-[65vh] mt-6">
+          <h3 className="font-bold text-xl mb-4 text-center border-b pb-2">
+            {currentRoom.name}
+          </h3>
 
+          {/* Messages */}
           <div className="flex-1 overflow-y-auto mb-4 space-y-2 px-2">
             {messages.map((msg) => {
               const isMe = msg.sender._id === user._id;
@@ -121,7 +152,9 @@ const Connect = () => {
                 >
                   <div
                     className={`max-w-xs px-4 py-2 rounded-lg shadow ${
-                      isMe ? "bg-blue-600 text-white rounded-br-none" : "bg-gray-100 text-gray-800 rounded-bl-none"
+                      isMe
+                        ? "bg-blue-600 text-white rounded-br-none"
+                        : "bg-gray-100 text-gray-800 rounded-bl-none"
                     }`}
                   >
                     {!isMe && <strong>{msg.sender.name}: </strong>}
@@ -133,11 +166,12 @@ const Connect = () => {
             <div ref={messagesEndRef} />
           </div>
 
+          {/* Message Input */}
           <div className="flex gap-2">
             <input
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && sendMessage()}
+              onKeyDown={(e) => e.key === "Enter" && sendMessage()}
               className="flex-1 p-2 rounded border focus:ring-2 focus:ring-blue-400"
               placeholder="Type a message..."
             />

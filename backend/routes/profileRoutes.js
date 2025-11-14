@@ -1,5 +1,6 @@
 import express from "express";
 import { getProfile, updateProfile } from "../controllers/profileController.js";
+import { upload } from "../middleware/upload.js";
 
 const router = express.Router();
 
@@ -7,6 +8,6 @@ const router = express.Router();
 router.get("/:userId", getProfile);
 
 // PUT /api/profile/:userId
-router.put("/:userId", updateProfile);
+router.put("/:userId", upload.single("profilePic"), updateProfile);
 
 export default router;

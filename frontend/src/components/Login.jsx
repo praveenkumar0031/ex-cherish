@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import Register from "./Register"; // import Register component
+import Register from "./Register";
 import "./Auth.css";
 
 function Login({ setUser }) {
@@ -11,7 +11,7 @@ function Login({ setUser }) {
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [showRegister, setShowRegister] = useState(false); // local state to toggle Register
+  const [showRegister, setShowRegister] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -35,16 +35,38 @@ function Login({ setUser }) {
 
       const { token, user } = res.data;
 
-      localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(user));
+      // --------------------------------------------
+      // 🔹 CLEAN PROFILE PIC BEFORE STORING
+      // --------------------------------------------
+      let finalProfilePic = null;
 
-      setUser(user);
+      if (user.profilePic) {
+        if (user.profilePic.startsWith("/uploads")) {
+          finalProfilePic = `http://localhost:5000${user.profilePic}`;
+        } else if (user.profilePic.startsWith("http")) {
+          finalProfilePic = user.profilePic;
+        }
+      }
+
+      const cleanUser = {
+        ...user,
+        profilePic: finalProfilePic,
+      };
+
+      // Store in localStorage
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(cleanUser));
+
+      // Update React State
+      setUser(cleanUser);
+
       setError("");
       setSuccess("Login successful! Redirecting...");
 
       setTimeout(() => {
         navigate("/dashboard");
       }, 1000);
+
     } catch (err) {
       setError(err.response?.data?.message || "Login failed");
       setSuccess("");

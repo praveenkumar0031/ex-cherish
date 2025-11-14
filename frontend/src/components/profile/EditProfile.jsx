@@ -2,8 +2,9 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-const EditProfile = ({ user }) => {
+const EditProfile = ({ user, setUser }) => {
   const navigate = useNavigate();
+
   const [profile, setProfile] = useState({
     name: "",
     email: "",
@@ -12,13 +13,14 @@ const EditProfile = ({ user }) => {
     interestedAreas: [],
     profilePic: "",
   });
+
+  const [selectedImageFile, setSelectedImageFile] = useState(null);
   const [newInterest, setNewInterest] = useState("");
-  const [message, setMessage] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // 🧩 Load user profile
+  // Load profile
   useEffect(() => {
     if (!user?._id) return;
     axios
@@ -30,77 +32,66 @@ const EditProfile = ({ user }) => {
       .catch((err) => console.error(err));
   }, [user]);
 
-  // 🖼️ Handle profile picture change
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setImagePreview(URL.createObjectURL(file));
-      setProfile({ ...profile, profilePic: file });
-    }
-  };
-
-  // 📤 Upload image file to backend
-  const uploadImage = async () => {
-    if (!(profile.profilePic instanceof File)) return profile.profilePic;
-
-    const formData = new FormData();
-    formData.append("image", profile.profilePic);
-
-    try {
-      setUploading(true);
-      const res = await axios.post("http://localhost:5000/api/upload", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      setUploading(false);
-      return res.data.url; // URL returned by backend
-    } catch (err) {
-      console.error("Image upload failed", err);
-      setUploading(false);
-      return null;
-    }
-  };
-
-  // 💾 Save profile
+  // Save profile
   const handleSave = async () => {
     try {
       setSaving(true);
 
-      // Upload image first if needed
-      let imageUrl = await uploadImage();
-      if (!imageUrl && imagePreview) imageUrl = imagePreview;
+      const formDataToSend = new FormData();
 
-      // Prepare JSON payload for backend
-      const updatedProfile = {
-        dob: profile.dob,
-        mobile: profile.mobile,
-        interestedAreas: profile.interestedAreas,
-        profilePic: imageUrl, // backend should accept this field
-      };
+      formDataToSend.append("name", profile.name);
+      formDataToSend.append("email", profile.email);
+      formDataToSend.append("dob", profile.dob);
+      formDataToSend.append("mobile", profile.mobile);
+      profile.interestedAreas.forEach(area => {
+  formDataToSend.append("interestedAreas[]", area);
+});
 
-      await axios.put(
+
+      if (selectedImageFile) {
+        formDataToSend.append("profilePic", selectedImageFile);
+      }
+
+      const res = await axios.put(
         `http://localhost:5000/api/profile/${user._id}`,
-        updatedProfile
+        formDataToSend,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
       );
 
-      setMessage("✅ Profile updated successfully!");
-      setTimeout(() => navigate("/profile"), 1500);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+      setUser(res.data.user);
+
+      alert("Profile updated successfully!");
+
+      navigate("/profile"); // 👉 redirect after update
     } catch (err) {
       console.error(err);
-      setMessage("❌ Failed to update profile.");
+      alert("Update failed");
     } finally {
       setSaving(false);
     }
   };
 
-  // 🎯 Add new interest
+  // Add Interest
   const handleAddInterest = () => {
-    if (newInterest.trim()) {
-      setProfile({
-        ...profile,
-        interestedAreas: [...profile.interestedAreas, newInterest.trim()],
-      });
-      setNewInterest("");
-    }
+    if (!newInterest.trim()) return;
+
+    setProfile({
+      ...profile,
+      interestedAreas: [...profile.interestedAreas, newInterest.trim()],
+    });
+
+    setNewInterest("");
+  };
+
+  // Remove interest
+  const removeInterest = (index) => {
+    const updated = [...profile.interestedAreas];
+    updated.splice(index, 1);
+
+    setProfile({ ...profile, interestedAreas: updated });
   };
 
   return (
@@ -110,17 +101,7 @@ const EditProfile = ({ user }) => {
           Edit Profile
         </h2>
 
-        {message && (
-          <p
-            className={`text-center mb-4 text-sm font-medium ${
-              message.startsWith("✅") ? "text-green-600" : "text-red-600"
-            }`}
-          >
-            {message}
-          </p>
-        )}
-
-        {/* 👤 Profile Picture */}
+        {/* Profile Picture */}
         <div className="flex flex-col items-center mb-6">
           <div className="relative">
             <img
@@ -131,25 +112,37 @@ const EditProfile = ({ user }) => {
               alt="Profile"
               className="w-28 h-28 rounded-full object-cover border-4 border-blue-200 shadow"
             />
+
             <label
               htmlFor="profilePic"
               className="absolute bottom-1 right-1 bg-blue-600 text-white text-xs px-2 py-1 rounded-lg cursor-pointer hover:bg-blue-700 transition"
             >
               Change
             </label>
+
             <input
               id="profilePic"
               type="file"
               accept="image/*"
               className="hidden"
-              onChange={handleImageChange}
+              onChange={(e) => {
+                const file = e.target.files[0];
+                if (file) {
+                  setSelectedImageFile(file);
+                  setImagePreview(URL.createObjectURL(file));
+                }
+              }}
             />
           </div>
-          {uploading && <p className="text-xs text-gray-500 mt-2">Uploading image...</p>}
+
+          {uploading && (
+            <p className="text-xs text-gray-500 mt-2">Uploading image...</p>
+          )}
         </div>
 
-        {/* 🧾 Form Fields */}
+        {/* Fields */}
         <div className="space-y-4">
+          {/* Name */}
           <div>
             <label className="block text-gray-600 font-medium mb-1">Name</label>
             <input
@@ -160,6 +153,7 @@ const EditProfile = ({ user }) => {
             />
           </div>
 
+          {/* Email */}
           <div>
             <label className="block text-gray-600 font-medium mb-1">Email</label>
             <input
@@ -170,6 +164,7 @@ const EditProfile = ({ user }) => {
             />
           </div>
 
+          {/* DOB */}
           <div>
             <label className="block text-gray-600 font-medium mb-1">
               Date of Birth
@@ -182,8 +177,11 @@ const EditProfile = ({ user }) => {
             />
           </div>
 
+          {/* Mobile */}
           <div>
-            <label className="block text-gray-600 font-medium mb-1">Mobile</label>
+            <label className="block text-gray-600 font-medium mb-1">
+              Mobile
+            </label>
             <input
               type="text"
               placeholder="Enter mobile..."
@@ -195,21 +193,29 @@ const EditProfile = ({ user }) => {
             />
           </div>
 
-          {/* 🎯 Interests */}
+          {/* Interests */}
           <div>
             <label className="block text-gray-600 font-medium mb-1">
               Interested Areas
             </label>
+
             <div className="flex flex-wrap gap-2 mb-2">
               {profile.interestedAreas.map((area, idx) => (
                 <span
                   key={idx}
-                  className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm"
+                  className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm flex items-center gap-1"
                 >
                   {area}
+                  <button
+                    onClick={() => removeInterest(idx)}
+                    className="text-red-500 font-bold"
+                  >
+                    ×
+                  </button>
                 </span>
               ))}
             </div>
+
             <div className="flex gap-2">
               <input
                 type="text"
@@ -227,7 +233,7 @@ const EditProfile = ({ user }) => {
             </div>
           </div>
 
-          {/* 💾 Save */}
+          {/* Save */}
           <button
             onClick={handleSave}
             disabled={saving || uploading}

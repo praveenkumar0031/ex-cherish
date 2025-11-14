@@ -76,11 +76,11 @@ function App() {
             />
             <Route
               path="/edit-profile"
-              element={user ? <EditProfile user={user} /> : <Navigate to="/login" replace />}
+              element={user ? <EditProfile user={user} setUser={setUser} /> : <Navigate to="/login" replace />}
             />
             <Route
               path="*"
-              element={<Navigate to={user ? "/dashboard" : "/login"} replace />}
+              element={<Navigate to= "/home"  />}
             />
           </Routes>
         </div>

@@ -1,4 +1,6 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
+
 import { Shield, MessageCircle, Star, UserCheck, Users, BookOpen, Heart, Lightbulb, Globe, Book } from "lucide-react";
 
 const FeatureCard = ({ icon: Icon, title, description }) => (
@@ -20,7 +22,9 @@ const BenefitCard = ({ icon: Icon, text }) => (
   </div>
 );
 
+
 const Home = () => {
+  const navigate = useNavigate();
   return (
     <div className="space-y-16">
       {/* Hero */}
@@ -30,10 +34,10 @@ const Home = () => {
           Connect, share knowledge, and grow together. Excherish brings curious minds together to inspire learning and collaboration.
         </p>
         <button
-          onClick={() => window.location.href = "/register"}
+          onClick={() => navigate("/login")}
           className="bg-white text-blue-700 font-semibold px-6 md:px-8 py-2 md:py-3 rounded-full shadow-lg hover:shadow-xl transition transform hover:-translate-y-1 hover:scale-105"
         >
-          Join Now
+          Get Started
         </button>
       </section>
 

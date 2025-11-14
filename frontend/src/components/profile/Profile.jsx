@@ -7,32 +7,57 @@ const Profile = ({ user }) => {
 
   useEffect(() => {
     if (!user?._id) return;
+
     axios
       .get(`http://localhost:5000/api/profile/${user._id}`)
-      .then((res) => setProfile(res.data))
+      .then((res) => {
+        let data = res.data;
+
+        // ✅ Convert string → array if backend sends interests as a string
+        if (typeof data.interestedAreas === "string") {
+          try {
+            data.interestedAreas = JSON.parse(data.interestedAreas);
+          } catch {
+            data.interestedAreas = [];
+          }
+        }
+
+        // Ensure it's always an array
+        if (!Array.isArray(data.interestedAreas)) {
+          data.interestedAreas = [];
+        }
+
+        setProfile(data);
+      })
       .catch((err) => console.error(err));
   }, [user]);
 
-  if (!profile) return <div className="text-center mt-20">Loading...</div>;
+  if (!profile) {
+    return <div className="text-center mt-20">Loading...</div>;
+  }
 
-  const filledFields = ["dob", "mobile", "interestedAreas", "profileImage"].filter(
-    (f) => profile[f] && (Array.isArray(profile[f]) ? profile[f].length > 0 : true)
+  // Profile completion calculation
+  const filledFields = ["dob", "mobile", "interestedAreas", "profilePic"].filter(
+    (f) =>
+      profile[f] &&
+      (Array.isArray(profile[f]) ? profile[f].length > 0 : true)
   ).length;
 
   const completion = Math.round((filledFields / 4) * 100);
 
-  // ✅ Ensure credit is numeric before using .toFixed()
+  // Ensure credit is numeric
   const creditValue = Number(profile.credit) || 0;
 
   return (
     <div className="flex flex-col items-center py-10 px-4">
       <div className="bg-white shadow-2xl rounded-2xl p-8 w-full max-w-2xl">
+
+        {/* Header */}
         <div className="flex flex-col items-center mb-6">
-          {/* ✅ Profile Image */}
           <div className="relative w-28 h-28 rounded-full overflow-hidden border-4 border-blue-500 shadow-md">
-            {profile.profileImage ? (
+            {profile.profilePic ? (
               <img
-                src={`http://localhost:5000/${profile.profileImage}`}
+                src={profile.profilePic}
                 alt="Profile"
                 className="w-full h-full object-cover"
               />
@@ -49,7 +74,7 @@ const Profile = ({ user }) => {
           <p className="text-gray-500">{profile.email}</p>
         </div>
 
-        {/* ✅ Profile Completion */}
+        {/* Completion Bar */}
         <div className="mb-8">
           <h3 className="text-gray-700 font-medium mb-2">
             Profile Completion: {completion}%
@@ -64,7 +89,7 @@ const Profile = ({ user }) => {
           </div>
         </div>
 
-        {/* ✅ Credit Score Section */}
+        {/* Credit Score */}
         <div className="flex items-center gap-3 mb-6">
           <Coins className="text-orange-500" size={20} />
           <span className="text-gray-800 font-semibold">
@@ -73,44 +98,51 @@ const Profile = ({ user }) => {
           </span>
         </div>
 
-        {/* ✅ Profile Details */}
+        {/* Profile Details */}
         <div className="space-y-4 text-gray-700">
+          
           <div className="flex items-center gap-3">
             <Calendar className="text-blue-500" size={20} />
             <span>
               <strong>Date of Birth:</strong>{" "}
-              {profile.dob ? profile.dob : "Not added"}
-            </span>
-          </div>
-          <div className="flex items-center gap-3">
-            <Phone className="text-green-500" size={20} />
-            <span>
-              <strong>Mobile:</strong>{" "}
-              {profile.mobile ? profile.mobile : "Not added"}
+              {profile.dob || "Not added"}
             </span>
           </div>
 
           <div className="flex items-center gap-3">
+            <Phone className="text-green-500" size={20} />
+            <span>
+              <strong>Mobile:</strong>{" "}
+              {profile.mobile || "Not added"}
+            </span>
+          </div>
+
+          {/* Interested Areas */}
+          <div className="flex items-center gap-3 mb-1">
             <Star className="text-yellow-500" size={20} />
             <strong>Interested Areas:</strong>
           </div>
+
           <div className="flex flex-wrap gap-2">
-            {profile.interestedAreas?.length > 0 ? (
-              profile.interestedAreas.map((area, i) => (
+            {profile.interestedAreas.length > 0 ? (
+              profile.interestedAreas.map((area, idx) => (
                 <span
-                  key={i}
+                  key={idx}
                   className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-sm"
                 >
                   {area}
                 </span>
               ))
             ) : (
-              <p className="text-gray-500 text-sm">No interests added yet.</p>
+              <p className="text-gray-500 text-sm">
+                No interests added yet.
+              </p>
             )}
           </div>
+
         </div>
 
-        {/* ✅ Edit Button */}
+        {/* Edit Button */}
         <div className="mt-8 text-center">
           <button
             onClick={() => (window.location.href = "/edit-profile")}
@@ -119,6 +151,7 @@ const Profile = ({ user }) => {
             Edit Profile
           </button>
         </div>
+
       </div>
     </div>
   );
