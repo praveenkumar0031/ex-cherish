@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 
+
 import { Shield, MessageCircle, Star, UserCheck, Users, BookOpen, Heart, Lightbulb, Globe, Book } from "lucide-react";
 
 const FeatureCard = ({ icon: Icon, title, description }) => (
@@ -28,6 +29,7 @@ const Home = () => {
   return (
     <div className="space-y-16">
       {/* Hero */}
+      
       <section className="relative bg-gradient-to-r from-blue-500 to-blue-600 text-white py-24 px-6 text-center overflow-hidden rounded-b-3xl">
         <h1 className="text-5xl md:text-6xl font-extrabold mb-4 drop-shadow-lg">Welcome to Excherish</h1>
         <p className="text-lg md:text-xl max-w-2xl mx-auto mb-6 drop-shadow">

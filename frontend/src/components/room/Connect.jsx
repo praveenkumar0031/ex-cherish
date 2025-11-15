@@ -10,6 +10,7 @@ const Connect = () => {
   const [rooms, setRooms] = useState([]);
   const [currentRoom, setCurrentRoom] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [members, setMembers] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [roomName, setRoomName] = useState("");
 
@@ -17,9 +18,12 @@ const Connect = () => {
 
   const user = JSON.parse(localStorage.getItem("user"));
   const token = localStorage.getItem("token");
-  const config = { headers: { Authorization: `Bearer ${token}` } };
 
-  // socket connection
+  const config = {
+    headers: { Authorization: `Bearer ${token}` },
+  };
+
+  /* SOCKET */
   useEffect(() => {
     socket = io(ENDPOINT, { auth: { token } });
 
@@ -30,12 +34,12 @@ const Connect = () => {
     return () => socket.disconnect();
   }, []);
 
-  // auto scroll
+  /* AUTO SCROLL */
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Fetch rooms
+  /* FETCH ROOMS */
   useEffect(() => {
     const fetchRooms = async () => {
       const res = await axios.get(`${ENDPOINT}/api/rooms`, config);
@@ -44,16 +48,28 @@ const Connect = () => {
     fetchRooms();
   }, []);
 
+  /* MEMBERS FETCH */
+  const fetchMembers = async (roomId) => {
+    const res = await axios.get(`${ENDPOINT}/api/rooms/${roomId}/members`, config);
+    setMembers(res.data);
+  };
+
+  /* JOIN ROOM */
   const joinRoom = async (room) => {
     setCurrentRoom(room);
     setMessages([]);
 
+    await axios.post(`${ENDPOINT}/api/rooms/${room._id}/join`, {}, config);
+
     const res = await axios.get(`${ENDPOINT}/api/rooms/${room._id}/messages`, config);
     setMessages(res.data);
+
+    fetchMembers(room._id);
 
     socket.emit("joinRoom", room._id);
   };
 
+  /* CREATE ROOM */
   const createRoom = async () => {
     if (!roomName.trim()) return;
 
@@ -67,6 +83,7 @@ const Connect = () => {
     setRoomName("");
   };
 
+  /* SEND MESSAGE */
   const sendMessage = () => {
     if (!newMessage.trim() || !currentRoom) return;
 
@@ -80,29 +97,30 @@ const Connect = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-6 space-y-6">
-      {/* Create Room */}
+    <div className="max-w-7xl mx-auto p-6 space-y-8">
+
+      {/* CREATE ROOM */}
       <div className="flex gap-2">
         <input
           value={roomName}
           onChange={(e) => setRoomName(e.target.value)}
-          className="flex-1 p-2 rounded border focus:ring-2 focus:ring-blue-400"
-          placeholder="Enter room name"
+          className="flex-1 p-3 rounded-xl border shadow-sm focus:ring-2 focus:ring-blue-400 outline-none"
+          placeholder="Enter a new room name..."
         />
         <button
           onClick={createRoom}
-          className="bg-blue-600 text-white px-4 rounded hover:bg-blue-700 transition"
+          className="bg-blue-600 text-white px-5 py-2 rounded-xl shadow hover:bg-blue-700 transition"
         >
           Create
         </button>
       </div>
 
-      {/* Rooms Section Title */}
-      <h2 className="text-3xl font-semibold text-gray-800 flex items-center gap-2">
-        <Users size={26} className="text-blue-600" /> Chat Rooms
+      {/* TITLE */}
+      <h2 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
+        <Users size={28} className="text-blue-500" /> Chat Rooms
       </h2>
 
-      {/* Rooms Grid (Dashboard Style Cards) */}
+      {/* ROOMS GRID */}
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
         {rooms.map((room) => (
           <div
@@ -122,68 +140,109 @@ const Connect = () => {
 
             <div className="flex items-center justify-center text-sm text-gray-500 mb-4">
               <Users size={16} className="mr-2 text-blue-500" />
-              {room.members || 0} Members
+              {room.members?.length || 0} online
             </div>
 
-            <button
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg w-full text-sm hover:bg-blue-700 transition"
-            >
+            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg w-full text-sm hover:bg-blue-700 transition">
               Join Room
             </button>
           </div>
         ))}
       </div>
 
-      {/* Chat Section */}
+      {/* CHAT */}
       {currentRoom && (
-        <div className="bg-white rounded-lg shadow p-4 flex flex-col h-[65vh] mt-6">
-          <h3 className="font-bold text-xl mb-4 text-center border-b pb-2">
-            {currentRoom.name}
-          </h3>
+  <div className="bg-white rounded-xl shadow-xl p-4 flex flex-col h-[70vh] mt-6 border border-gray-200">
 
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto mb-4 space-y-2 px-2">
-            {messages.map((msg) => {
-              const isMe = msg.sender._id === user._id;
-              return (
-                <div
-                  key={msg._id}
-                  className={`flex ${isMe ? "justify-end" : "justify-start"}`}
-                >
-                  <div
-                    className={`max-w-xs px-4 py-2 rounded-lg shadow ${
-                      isMe
-                        ? "bg-blue-600 text-white rounded-br-none"
-                        : "bg-gray-100 text-gray-800 rounded-bl-none"
-                    }`}
-                  >
-                    {!isMe && <strong>{msg.sender.name}: </strong>}
-                    <span>{msg.text}</span>
-                  </div>
-                </div>
-              );
-            })}
-            <div ref={messagesEndRef} />
-          </div>
+    {/* HEADER */}
+    <div className="flex justify-between items-center border-b pb-3 px-2">
+      <h3 className="font-bold text-xl text-gray-800">{currentRoom.name}</h3>
 
-          {/* Message Input */}
-          <div className="flex gap-2">
-            <input
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-              className="flex-1 p-2 rounded border focus:ring-2 focus:ring-blue-400"
-              placeholder="Type a message..."
-            />
-            <button
-              onClick={sendMessage}
-              className="bg-blue-600 text-white px-4 rounded hover:bg-blue-700 transition"
-            >
-              Send
-            </button>
+      {/* Members Count */}
+      <div className="flex items-center gap-2 bg-blue-50 text-red-700 px-3 py-1 rounded-full shadow-sm">
+        <Users size={16} />
+        <span className="font-medium text-red-500">{members.length - 1}</span>
+      </div>
+    </div>
+
+    {/* MESSAGES */}
+    <div className="flex-1 overflow-y-auto py-4 space-y-4 px-3 bg-gray-50 rounded-xl mt-3">
+
+      {messages.map((msg) => {
+        const isMe = msg.sender._id === user._id;
+
+        return (
+          <div
+            key={msg._id}
+            className={`flex items-start gap-3 ${isMe ? "justify-end" : ""}`}
+          >
+            {/* AVATAR */}
+            {!isMe && (
+              <img
+                src={
+                  msg.sender.profilePic
+                    ? `http://localhost:5000${msg.sender.profilePic}`
+                    : "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                }
+                className="w-10 h-10 rounded-full object-cover shadow"
+              />
+            )}
+
+            {/* MESSAGE BUBBLE */}
+            <div className={`max-w-xs ${isMe ? "text-right" : ""}`}>
+
+              {/* USERNAME + TIME */}
+              {!isMe && (
+                <p className="text-sm font-semibold text-gray-700 mb-1">
+                  {msg.sender.name} &nbsp;
+                  <span className="text-gray-400 text-xs">
+                    {new Date(msg.createdAt).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                </p>
+              )}
+
+              <div
+                className={`px-4 py-2 rounded-2xl shadow-md text-[15px] leading-relaxed
+                  ${isMe
+                    ? "bg-blue-600 text-white rounded-br-none"
+                    : "bg-white text-gray-800 rounded-bl-none border"
+                  }`}
+              >
+                {msg.text}
+              </div>
+            </div>
+
+            
           </div>
-        </div>
-      )}
+        );
+      })}
+
+      <div ref={messagesEndRef} />
+    </div>
+
+    {/* INPUT BOX */}
+    <div className="flex gap-2 mt-3">
+      <input
+        value={newMessage}
+        onChange={(e) => setNewMessage(e.target.value)}
+        onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+        className="flex-1 p-3 rounded-xl border shadow-sm focus:ring-2 focus:ring-blue-400 outline-none bg-white"
+        placeholder="Type a message..."
+      />
+
+      <button
+        onClick={sendMessage}
+        className="bg-blue-600 text-white px-5 py-2 rounded-xl shadow hover:bg-blue-700 transition"
+      >
+        Send
+      </button>
+    </div>
+  </div>
+)}
+
     </div>
   );
 };
