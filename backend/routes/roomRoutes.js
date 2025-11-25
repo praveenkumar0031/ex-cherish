@@ -22,13 +22,10 @@ router.post("/create", authMiddleware, createRoom);
 /* Join room */
 router.post("/:roomId/join", authMiddleware, joinRoom);
 
-/* Get members */
-router.get("/:roomId/members", authMiddleware, getRoomMembers);
 
-/* Get messages */
+router.get("/:roomId/members", authMiddleware, getRoomMembers);
 router.get("/:roomId/messages", authMiddleware, getRoomMessages);
 
-/* ⭐ NEW: Room Stats */
 router.get("/:roomId/stats", authMiddleware, getRoomStats);
 
 export default router;

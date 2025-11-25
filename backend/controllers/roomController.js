@@ -1,14 +1,11 @@
-// controllers/roomController.js
 import Room from "../models/Room.js";
 import RoomMessage from "../models/RoomMessage.js";
 
-/* ----------------------- Get all rooms ----------------------- */
 export const getRooms = async (req, res) => {
   const rooms = await Room.find().sort({ createdAt: -1 });
   res.json(rooms);
 };
 
-/* ----------------------- Create room ----------------------- */
 export const createRoom = async (req, res) => {
   const { name } = req.body;
   if (!name) return res.status(400).json({ message: "Room name required" });
@@ -25,7 +22,6 @@ export const createRoom = async (req, res) => {
   res.json(room);
 };
 
-/* ----------------------- Join room ----------------------- */
 export const joinRoom = async (req, res) => {
   const roomId = req.params.roomId;
 
@@ -40,7 +36,6 @@ export const joinRoom = async (req, res) => {
   res.json({ message: "Joined room", room });
 };
 
-/* ----------------------- Get Room Members ----------------------- */
 export const getRoomMembers = async (req, res) => {
   const room = await Room.findById(req.params.roomId)
     .populate("members", "name email profilePic");
@@ -50,7 +45,6 @@ export const getRoomMembers = async (req, res) => {
   res.json(room.members);
 };
 
-/* ----------------------- Get Room Messages ----------------------- */
 export const getRoomMessages = async (req, res) => {
   const messages = await RoomMessage.find({ room: req.params.roomId })
     .populate("sender", "name profilePic")
@@ -59,13 +53,7 @@ export const getRoomMessages = async (req, res) => {
   res.json(messages);
 };
 
-/* ----------------------- NEW: Room Stats ----------------------- */
-/*
-   Returns:
-   - totalMembers
-   - totalMessages
-   - uniqueUsersTexted
-*/
+
 export const getRoomStats = async (req, res) => {
   const roomId = req.params.roomId;
 
