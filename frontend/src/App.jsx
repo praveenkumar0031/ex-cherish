@@ -11,6 +11,7 @@ import EditProfile from "./components/profile/EditProfile";
 import Navbar from "./components/navbar/Navbar";
 import Connect from "./components/room/Connect";
 import Home from "./pages/Home.jsx";
+import SettingsTab from "./components/landing/SettingsTab.jsx";
 
 import "./App.css";
 
@@ -116,6 +117,18 @@ function App() {
                 user ? (
                   <Title title="Chat">
                     <Chat user={user} />
+                  </Title>
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                user ? (
+                  <Title title="Settings">
+                    <SettingsTab user={user} />
                   </Title>
                 ) : (
                   <Navigate to="/login" replace />

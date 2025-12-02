@@ -140,7 +140,7 @@ const Connect = () => {
 
             <div className="flex items-center justify-center text-sm text-gray-500 mb-4">
               <Users size={16} className="mr-2 text-blue-500" />
-              {room.members?.length || 0} online
+              {room.members?.length || 0} members
             </div>
 
             <button className="bg-blue-600 text-white px-4 py-2 rounded-lg w-full text-sm hover:bg-blue-700 transition">
