@@ -1,75 +1,87 @@
 import Room from "../models/Room.js";
 import RoomMessage from "../models/RoomMessage.js";
 
-export const getRooms = async (req, res) => {
-  const rooms = await Room.find().sort({ createdAt: -1 });
-  res.json(rooms);
-};
+/**
+ * @desc    Start a connection with another user for a skill swap
+ * @route   POST /api/rooms/initialize
+ */
+export const initiateConnection = async (req, res) => {
+  const { receiverId, skillOffered, skillDesired } = req.body;
+  const senderId = req.user.id;
 
-export const createRoom = async (req, res) => {
-  const { name } = req.body;
-  if (!name) return res.status(400).json({ message: "Room name required" });
-
-  const exists = await Room.findOne({ name });
-  if (exists) return res.status(400).json({ message: "Room already exists" });
-
-  const room = await Room.create({
-    name,
-    createdBy: req.user.id,
-    members: [req.user.id],
-  });
-
-  res.json(room);
-};
-
-export const joinRoom = async (req, res) => {
-  const roomId = req.params.roomId;
-
-  const room = await Room.findById(roomId);
-  if (!room) return res.status(404).json({ message: "Room not found" });
-
-  if (!room.members.includes(req.user.id)) {
-    room.members.push(req.user.id);
-    await room.save();
+  if (senderId === receiverId) {
+    return res.status(400).json({ message: "You cannot exchange skills with yourself!" });
   }
 
-  res.json({ message: "Joined room", room });
+  try {
+    // Check if a room already exists between these two for THIS specific skill
+    let room = await Room.findOne({
+      members: { $all: [senderId, receiverId] },
+      skillOffered: skillOffered
+    });
+
+    if (!room) {
+      room = await Room.create({
+        name: `Exchange: ${skillOffered}`,
+        createdBy: senderId,
+        members: [senderId, receiverId],
+        skillOffered,
+        skillDesired,
+        status: 'active'
+      });
+    }
+
+    res.status(200).json(room);
+  } catch (error) {
+    res.status(500).json({ message: "Server Error", error: error.message });
+  }
 };
 
-export const getRoomMembers = async (req, res) => {
-  const room = await Room.findById(req.params.roomId)
-    .populate("members", "name email profilePic");
-
-  if (!room) return res.status(404).json({ message: "Room not found" });
-
-  res.json(room.members);
+/**
+ * @desc    Get all active exchanges for the logged-in user
+ * @route   GET /api/rooms/my-exchanges
+ */
+export const getMyExchanges = async (req, res) => {
+  try {
+    const rooms = await Room.find({ members: req.user.id })
+      .populate("members", "name profilePic skills") // Show who you are talking to
+      .sort({ updatedAt: -1 });
+    
+    res.json(rooms);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching rooms" });
+  }
 };
 
-export const getRoomMessages = async (req, res) => {
-  const messages = await RoomMessage.find({ room: req.params.roomId })
-    .populate("sender", "name profilePic")
-    .sort({ createdAt: 1 });
+/**
+ * @desc    Get message history for a room
+ * @route   GET /api/rooms/:roomId/messages
+ */
+export const getExchangeMessages = async (req, res) => {
+  try {
+    const messages = await RoomMessage.find({ room: req.params.roomId })
+      .populate("sender", "name profilePic")
+      .sort({ createdAt: 1 });
 
-  res.json(messages);
+    res.json(messages);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching messages" });
+  }
 };
 
-
-export const getRoomStats = async (req, res) => {
-  const roomId = req.params.roomId;
-
-  const room = await Room.findById(roomId);
-  if (!room) return res.status(404).json({ message: "Room not found" });
-
-  const messages = await RoomMessage.find({ room: roomId }).populate(
-    "sender",
-    "_id"
-  );
-
-  const uniqueUsers = new Set(messages.map((m) => m.sender._id.toString()));
-
-  res.json({
-    totalMembers: room.members.length,
-    totalMessages: messages.length,
-    uniqueUsersTexted: uniqueUsers.size,
-  });
+/**
+ * @desc    Update status to completed
+ * @route   PATCH /api/rooms/:roomId/complete
+ */
+export const markAsCompleted = async (req, res) => {
+  try {
+    const room = await Room.findByIdAndUpdate(
+      req.params.roomId, 
+      { status: 'completed' }, 
+      { new: true }
+    );
+    res.json(room);
+  } catch (error) {
+    res.status(500).json({ message: "Update failed" });
+  }
 };
