@@ -1,16 +1,22 @@
-const jwt = require("jsonwebtoken");
+import jwt from "jsonwebtoken";
+import User from "../models/userModel.js"; // Ensure .js is here too!
 
-const authMiddleware = (req, res, next) => {
-  const token = req.headers.authorization?.split(" ")[1];
-  if (!token) return res.status(401).json({ message: "Unauthorized" });
+// Use 'export const' to match the named import in your routes
+export const authmiddleware = async (req, res, next) => {
+  let token;
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; // { id: ..., email: ... }
-    next();
-  } catch (err) {
-    res.status(401).json({ message: "Invalid token" });
+  if (req.headers.authorization?.startsWith("Bearer")) {
+    try {
+      token = req.headers.authorization.split(" ")[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      req.user = await User.findById(decoded.id).select("-password");
+      next();
+    } catch (error) {
+      return res.status(401).json({ message: "Not authorized" });
+    }
+  }
+
+  if (!token) {
+    return res.status(401).json({ message: "No token" });
   }
 };
-
-module.exports = authMiddleware;

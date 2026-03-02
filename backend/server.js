@@ -7,14 +7,12 @@ import connectDB from "./config/db.js";
 import messageRoutes from "./routes/messageRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
-import roomRoutes from "./routes/roomRoutes.js"; // New room routes
-import Room from "./models/Room.js";
-import RoomMessage from "./models/RoomMessage.js"; // Room messages
-import jwt from "jsonwebtoken";
+import roomRoutes from "./routes/roomRoutes.js"; 
+import RoomMessage from "./models/RoomMessage.js"; 
+import uploadRoutes from "./routes/uploadRoutes.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
-// Fix ES module dirname issue
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -26,72 +24,71 @@ app.use(cors());
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
-// ====== REST API ROUTES ======
+// ====== REST API ROUTES (UNTCHED) ======
 app.use("/api/messages", messageRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/profile", profileRoutes);
-app.use("/api/rooms", roomRoutes); // New room API
+app.use("/api/rooms", roomRoutes); 
 
-// ====== Test route ======
 app.get("/", (req, res) => {
-  res.send("API is running...");
+  res.send("Excherish API is running...");
 });
-
+app.use("/api/upload", uploadRoutes);
 // ====== SOCKET.IO SETUP ======
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: process.env.FRONTEND,
     methods: ["GET", "POST", "PUT", "DELETE"],
   },
 });
 
-// ================= PERSONAL CHAT =================
 io.on("connection", (socket) => {
-  console.log("User connected:", socket.id);
+  console.log("Connected:", socket.id);
 
-  // ✅ Join room for personal username
+  // --- PERSONAL CHAT (REMAINED) ---
   socket.on("join", (username) => {
     socket.join(username);
-    console.log(`${username} joined their room`);
   });
 
-  // ✅ Handle personal messages
   socket.on("sendMessage", (data) => {
-    const { sender, receiver } = data;
+    const { receiver } = data;
     io.to(receiver).emit("receiveMessage", data);
   });
 
-  // ================= ROOM CHAT =================
-  socket.on("joinRoom", (roomId) => {
+  // --- EXCHERISH ROOM CHAT (SYNCHRONIZED) ---
+  
+  // 1. Join a specific exchange room (1-on-1)
+  socket.on("join_room", (roomId) => {
     socket.join(roomId);
-    console.log(`User ${socket.id} joined room ${roomId}`);
+    console.log(`Socket ${socket.id} joined Room ${roomId}`);
   });
 
-  socket.on("sendRoomMessage", async (data) => {
-    const { roomId, userId, text } = data;
+  // 2. Handle 1-on-1 exchange messages
+  socket.on("send_message", async (data) => {
+    const { room, sender, text } = data; // Match your Chat.jsx object keys
     try {
-      // Save message in DB
+      // Save to MongoDB
       const newMsg = await RoomMessage.create({
-        room: roomId,
-        sender: userId,
+        room,
+        sender,
         text,
       });
 
+      // Populate sender info so UI shows Name/Avatar instantly
       const populatedMsg = await newMsg.populate("sender", "name profilePic");
 
-      // Emit to everyone in room
-      io.to(roomId).emit("newRoomMessage", populatedMsg);
+      // Broadcast to both users in the room
+      io.to(room).emit("receive_message", populatedMsg);
     } catch (err) {
-      console.error("Room message error:", err.message);
+      console.error("Excherish Chat Error:", err.message);
     }
   });
 
   socket.on("disconnect", () => {
-    console.log("User disconnected:", socket.id);
+    console.log("Disconnected:", socket.id);
   });
 });
 
-// ====== START SERVER ======
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`🚀 Excherish Server running on port ${PORT}`));

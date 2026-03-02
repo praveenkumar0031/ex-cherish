@@ -1,26 +1,26 @@
 import express from "express";
 import { 
-  initiateConnection, 
-  getMyExchanges, 
-  getExchangeMessages,
-  markAsCompleted 
+  createSkillRoom,
+  connectToExchange,
+  discoverAllCards,
+  getMyChats,
+  getRoomMessages
 } from "../controllers/roomController.js";
-import { protect } from "../middleware/authMiddleware.js"; // Assuming you have auth middleware
+
+// Ensure your middleware file uses 'export const authmiddleware'
+import { authmiddleware } from "../middleware/authMiddleware.js"; 
 
 const router = express.Router();
-// All routes are protected
-router.use(protect);
 
-// Initialize or get a room between two users for a skill
-router.post("/initialize", initiateConnection);
+// Public Routes (viewing cards on landing page)
+router.get("/discover", discoverAllCards);
 
-// Get all chat rooms the logged-in user is part of
-router.get("/my-exchanges", getMyExchanges);
+// Protected Routes (Must be logged in)
+router.use(authmiddleware);
 
-// Get messages for a specific room
-router.get("/:roomId/messages", getExchangeMessages);
-
-// Feature: Mark a skill exchange as 'completed'
-router.patch("/:roomId/complete", markAsCompleted);
+router.post("/create", createSkillRoom);             // Create a card
+router.post("/:roomId/connect", connectToExchange); // Join a card (1-on-1)
+router.get("/my-chats", getMyChats);                // View my active 1-on-1s
+router.get("/:roomId/messages", getRoomMessages);   // Get chat history
 
 export default router;
