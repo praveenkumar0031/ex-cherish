@@ -4,7 +4,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import Title from "./components/title/Title";
 import Login from "./components/Login";
 import Register from "./components/Register";
-import Chat from "./components/chatbox/Chat";
 import Dashboard from "./components/landing/DashBoard";
 import Profile from "./components/profile/Profile";
 import EditProfile from "./components/profile/EditProfile";
@@ -13,13 +12,16 @@ import Connect from "./components/room/Connect";
 import Home from "./pages/Home.jsx";
 import SettingsTab from "./components/landing/SettingsTab.jsx";
 
+// Import new components
+import ChatRoom from "./components/room/ChatRoom.jsx"; 
+import DiscoveryPage from "./components/match/DiscoveryPage.jsx";
+
 import "./App.css";
 
 function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Load user on app start
   useEffect(() => {
     const token = localStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
@@ -30,14 +32,12 @@ function App() {
     setLoading(false);
   }, []);
 
-  // Save user on change
   useEffect(() => {
     if (user) {
       localStorage.setItem("user", JSON.stringify(user));
     }
   }, [user]);
 
-  // Loading UI
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen text-gray-600">
@@ -46,6 +46,15 @@ function App() {
     );
   }
 
+  // Helper for Protected Routes to keep the JSX clean
+  const ProtectedRoute = ({ children, title }) => {
+    return user ? (
+      <Title title={title}>{children}</Title>
+    ) : (
+      <Navigate to="/login" replace />
+    );
+  };
+
   return (
     <Router>
       <div className="min-h-screen bg-gray-50">
@@ -53,133 +62,41 @@ function App() {
 
         <div className="pt-16">
           <Routes>
-
-            {/* LOGIN */}
+            {/* PUBLIC ROUTES */}
             <Route
               path="/login"
-              element={
-                user ? (
-                  <Navigate to="/dashboard" />
-                ) : (
-                  <Title title="Login">
-                    <Login setUser={setUser} />
-                  </Title>
-                )
-              }
+              element={user ? <Navigate to="/dashboard" /> : <Title title="Login"><Login setUser={setUser} /></Title>}
             />
-
-            {/* REGISTER */}
             <Route
               path="/register"
-              element={
-                user ? (
-                  <Navigate to="/dashboard" />
-                ) : (
-                  <Title title="Register">
-                    <Register />
-                  </Title>
-                )
-              }
+              element={user ? <Navigate to="/dashboard" /> : <Title title="Register"><Register /></Title>}
             />
 
-            {/* DASHBOARD */}
-            <Route
-              path="/dashboard"
-              element={
-                user ? (
-                  <Title title="Dashboard">
-                    <Dashboard user={user} />
-                  </Title>
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
+            {/* PROTECTED ROUTES */}
+            <Route path="/dashboard" element={<ProtectedRoute title="Dashboard"><Dashboard user={user} /></ProtectedRoute>} />
+            <Route path="/home" element={<ProtectedRoute title="Home"><Home user={user} /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute title="Profile"><Profile user={user} /></ProtectedRoute>} />
+            <Route path="/edit-profile" element={<ProtectedRoute title="Edit Profile"><EditProfile user={user} setUser={setUser} /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute title="Settings"><SettingsTab user={user} /></ProtectedRoute>} />
+            
+            {/* SKILL EXCHANGE ROOMS */}
+            <Route path="/room" element={<ProtectedRoute title="Skill Rooms"><Connect user={user} /></ProtectedRoute>} />
+
+            {/* NEW: DISCOVERY / MATCHMAKING */}
+            <Route 
+              path="/discover" 
+              element={<ProtectedRoute title="Discover Matches"><DiscoveryPage user={user} /></ProtectedRoute>} 
             />
 
-            {/* ROOM */}
-            <Route
-              path="/room"
-              element={
-                user ? (
-                  <Title title="Rooms">
-                    <Connect user={user} />
-                  </Title>
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-
-            {/* CHAT */}
-            <Route
-              path="/chat"
-              element={
-                user ? (
-                  <Title title="Chat">
-                    <Chat user={user} />
-                  </Title>
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            <Route
-              path="/settings"
-              element={
-                user ? (
-                  <Title title="Settings">
-                    <SettingsTab user={user} />
-                  </Title>
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-
-            {/* HOME */}
-            <Route
-              path="/home"
-              element={
-                user ? (
-                  <Title title="Home">
-                    <Home user={user} />
-                  </Title>
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-
-            {/* PROFILE */}
-            <Route
-              path="/profile"
-              element={
-                user ? (
-                  <Title title="Profile">
-                    <Profile user={user} />
-                  </Title>
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-
-            {/* EDIT PROFILE */}
-            <Route
-              path="/edit-profile"
-              element={
-                user ? (
-                  <Title title="Edit Profile">
-                    <EditProfile user={user} setUser={setUser} />
-                  </Title>
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
+            {/* NEW: DYNAMIC CHAT ROOM */}
+            {/* We use :roomId so the component can grab the ID from the URL */}
+            <Route 
+              path="/chat/:roomId" 
+              element={<ProtectedRoute title="Chat"><ChatRoom user={user} /></ProtectedRoute>} 
             />
 
             {/* DEFAULT ROUTE */}
-            <Route path="*" element={<Navigate to="/home" />} />
+            <Route path="*" element={<Navigate to={user ? "/home" : "/login"} />} />
           </Routes>
         </div>
       </div>

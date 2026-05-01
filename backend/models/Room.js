@@ -1,15 +1,34 @@
 import mongoose from "mongoose";
-const roomSchema = new mongoose.Schema({
-  name: { type: String, required: true, unique: true }, // Enforce unique names platform-wide
-  skillOffered: { type: String, required: true }, 
-  skillDesired: { type: String, required: true }, 
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  members: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // Limited to 2 for 1-on-1
-  status: { type: String, enum: ['active', 'completed'], default: 'active' }, 
-  createdAt: { type: Date, default: Date.now },
-});
 
-// Create a compound index so a user cannot create two rooms for the same skill
-roomSchema.index({ createdBy: 1, skillOffered: 1 }, { unique: true });
+const roomSchema = new mongoose.Schema(
+  {
+    name: { 
+      type: String, 
+      trim: true 
+    },
+    topic: { 
+      type: String // Useful for your "Skill Exchange" or "Interest" topics
+    },
+    members: [
+      { 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: "User" 
+      }
+    ],
+    isGroup: { 
+      type: Boolean, 
+      default: true // true for public topics, false for 1-on-1 matches
+    },
+    status: { 
+      type: String, 
+      enum: ["active", "archived"], 
+      default: "active" 
+    },
+    // For Skill Exchange specific features
+    skillOffered: { type: String },
+    skillDesired: { type: String },
+  },
+  { timestamps: true }
+);
 
 export default mongoose.model("Room", roomSchema);

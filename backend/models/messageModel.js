@@ -1,12 +1,17 @@
 import mongoose from "mongoose";
 
-const messageSchema = new mongoose.Schema(
-  {
-    sender: { type: String, required: true },
-    receiver: { type: String, required: true },
-    text: { type: String, required: true },
+const messageSchema = new mongoose.Schema({
+  room: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: "Room", 
+    required: true 
   },
-  { timestamps: true }
-);
+  sender: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: "User", 
+    required: true 
+  },
+  text: { type: String, required: true },
+}, { timestamps: true });
 
 export default mongoose.model("Message", messageSchema);

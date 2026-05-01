@@ -10,6 +10,7 @@ import profileRoutes from "./routes/profileRoutes.js";
 import roomRoutes from "./routes/roomRoutes.js"; 
 import RoomMessage from "./models/RoomMessage.js"; 
 import uploadRoutes from "./routes/uploadRoutes.js";
+import matchRoutes from "./routes/matchRoutes.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -25,11 +26,12 @@ app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
 // ====== REST API ROUTES (UNTCHED) ======
+app.use("/api/matches", matchRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/profile", profileRoutes);
+//app.use("/api/profile", profileRoutes);
 app.use("/api/rooms", roomRoutes); 
-
+app.use("/api/profiles", profileRoutes);
 app.get("/", (req, res) => {
   res.send("Excherish API is running...");
 });

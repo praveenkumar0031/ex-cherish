@@ -88,9 +88,9 @@ const Navbar = ({ user, setUser }) => {
             </button>
 
             <button
-              onClick={() => navigate("/room")}
+              onClick={() => navigate("/discover")}
               className={`hover:text-blue-600 transition ${
-                location.pathname === "/room"
+                location.pathname === "/discover"
                   ? "text-blue-600 font-semibold"
                   : ""
               }`}

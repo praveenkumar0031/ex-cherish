@@ -1,6 +1,14 @@
 import Profile from "../models/profileModel.js";
 import User from "../models/userModel.js";
 
+// Helper function to safely handle Decimal128 conversion
+const formatCredit = (credit) => {
+  if (!credit) return 0;
+  return typeof credit === "object" && credit.toString 
+    ? parseFloat(credit.toString()) 
+    : parseFloat(credit) || 0;
+};
+
 // -------------------------------
 // GET PROFILE
 // -------------------------------
@@ -13,7 +21,6 @@ export const getProfile = async (req, res) => {
 
     let profile = await Profile.findOne({ user: userId });
 
-    // Create new profile if not exists
     if (!profile) {
       profile = await Profile.create({ user: userId });
     }
@@ -25,7 +32,8 @@ export const getProfile = async (req, res) => {
       dob: profile.dob || "",
       mobile: profile.mobile || "",
       interestedAreas: profile.interestedAreas || [],
-      credit: profile.credit || 0,
+      // ✅ FIXED: Convert Decimal128 to Number
+      credit: formatCredit(profile.credit),
     });
 
   } catch (err) {
@@ -39,41 +47,26 @@ export const getProfile = async (req, res) => {
 export const updateProfile = async (req, res) => {
   try {
     const userId = req.params.userId;
-
     let { name, email, dob, mobile, interestedAreas, credit } = req.body;
 
-    // -------------------------------
-    // FIX ARRAY ISSUE
-    // -------------------------------
     if (typeof interestedAreas === "string") {
       try {
-        interestedAreas = JSON.parse(interestedAreas); // When frontend sends JSON
+        interestedAreas = JSON.parse(interestedAreas);
       } catch {
-        interestedAreas = [interestedAreas]; // Single string
+        interestedAreas = [interestedAreas];
       }
     }
     if (!Array.isArray(interestedAreas)) {
       interestedAreas = [];
     }
 
-    // -------------------------------
-    // UPDATE USER TABLE
-    //-------------------------------
     const updateUserData = { name, email };
-
     if (req.file) {
       updateUserData.profilePic = "/uploads/" + req.file.filename;
     }
 
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      updateUserData,
-      { new: true }
-    );
+    const updatedUser = await User.findByIdAndUpdate(userId, updateUserData, { new: true });
 
-    // -------------------------------
-    // UPDATE PROFILE TABLE
-    //-------------------------------
     const updatedProfile = await Profile.findOneAndUpdate(
       { user: userId },
       { dob, mobile, interestedAreas, credit },
@@ -83,11 +76,47 @@ export const updateProfile = async (req, res) => {
     res.json({
       message: "Profile updated successfully",
       user: updatedUser,
-      profile: updatedProfile,
+      profile: {
+        ...updatedProfile._doc,
+        // ✅ FIXED: Convert Decimal128 to Number in response
+        credit: formatCredit(updatedProfile.credit),
+      },
     });
 
   } catch (err) {
     console.error("Profile Update Error:", err);
     res.status(500).json({ message: err.message });
+  }
+};
+
+// -------------------------------
+// GET ALL PROFILES (For Dashboard)
+// -------------------------------
+export const getAllProfiles = async (req, res) => {
+  try {
+    const profiles = await Profile.find()
+      .populate("user", "name email profilePic")
+      .sort({ createdAt: -1 });
+
+    const formattedProfiles = profiles.map((p) => {
+      if (!p.user) return null;
+
+      return {
+        profileId: p._id,
+        userId: p.user._id,
+        name: p.user.name,
+        email: p.user.email,
+        profilePic: p.user.profilePic ? `http://localhost:5000${p.user.profilePic}` : "",
+        dob: p.dob || "",
+        mobile: p.mobile || "",
+        interestedAreas: p.interestedAreas || [],
+        // ✅ FIXED: Convert Decimal128 to Number
+        credit: formatCredit(p.credit),
+      };
+    }).filter(p => p !== null);
+
+    res.json(formattedProfiles);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching dashboard profiles", error: err.message });
   }
 };
