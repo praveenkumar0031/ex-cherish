@@ -5,6 +5,6 @@ import { authmiddleware} from "../middleware/authMiddleware.js"; // Assuming you
 const router = express.Router();
 
 router.get("/discover", authmiddleware, discoverProfiles);
-router.post("/like/:userId", authmiddleware, likeProfile);
+router.post("/like", authmiddleware, likeProfile);
 
 export default router;

@@ -14,7 +14,7 @@ const formatCredit = (credit) => {
 // -------------------------------
 export const getProfile = async (req, res) => {
   try {
-    const userId = req.params.userId;
+    const userId = req.params.id;
 
     const user = await User.findById(userId).select("name email profilePic");
     if (!user) return res.status(404).json({ message: "User not found" });

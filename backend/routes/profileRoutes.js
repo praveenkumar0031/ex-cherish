@@ -6,7 +6,7 @@ import { authmiddleware } from "../middleware/authMiddleware.js";
 const router = express.Router();
 router.get("/all",authmiddleware, getAllProfiles);
 // GET /api/profile/:userId
-router.get("/:userId", getProfile);
+router.get("/:id", getProfile);
 
 // PUT /api/profile/:userId
 router.put("/:userId", upload.single("profilePic"), updateProfile);
