@@ -1,79 +1,121 @@
 import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
-import PrivateChat from "../chat/PrivateChat"; // The component we created in Step 1
-import { useNavigate } from "react-router-dom";
+import { Heart, X, Star, Info } from "lucide-react";
+
 const DiscoveryPage = () => {
-  const [matches, setMatches] = useState([]);
-  const [selectedUser, setSelectedUser] = useState(null); // Track who we are chatting with
-const navigate = useNavigate();
+  const [profiles, setProfiles] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+
   useEffect(() => {
-    const fetchMatches = async () => {
+    const fetchProfiles = async () => {
       try {
+        const token = localStorage.getItem("token");
         const res = await axios.get("http://localhost:5000/api/matches/discover", {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+          headers: { Authorization: `Bearer ${token}` },
         });
-        setMatches(res.data);
+        setProfiles(res.data);
       } catch (err) {
-        console.error("Error fetching matches", err);
+        console.error("Error fetching profiles", err);
       }
     };
-    fetchMatches();
+    fetchProfiles();
   }, []);
 
+  const handleSwipe = (direction) => {
+    const swipedProfile = profiles[currentIndex];
+    console.log(`Swiped ${direction} on ${swipedProfile.name}`);
+
+    if (direction === "right") {
+      // Trigger match logic here
+      const token = localStorage.getItem("token");
+      axios.post("http://localhost:5000/api/matches/like", 
+        { targetUserId: swipedProfile._id },
+        { headers: { Authorization: `Bearer ${token}` }}
+      );
+    }
+
+    // Move to next card
+    setCurrentIndex((prev) => prev + 1);
+  };
+
   return (
-    <div className="discovery-container p-6">
-      <h1 className="text-2xl font-bold mb-6">People who match your interests</h1>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {matches.map((match) => (
-          <div key={match._id} className="border p-4 rounded-lg shadow hover:shadow-xl transition">
-            <img 
-              src={match.profilePic || "/default-avatar.png"} 
-              alt={match.name} 
-              className="w-full h-48 object-cover rounded-md"
-            />
-            <div className="mt-4 flex justify-between items-center">
-              <div>
-                <h2 className="font-bold text-lg">{match.name}</h2>
-                <p className="text-gray-600 text-sm">{match.interests.join(", ")}</p>
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-80px)] bg-gray-50 overflow-hidden">
+      <div className="relative w-full max-w-sm h-[500px]">
+        <AnimatePresence>
+          {profiles.slice(currentIndex, currentIndex + 1).map((profile) => (
+            <motion.div
+              key={profile._id}
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ 
+                x: direction === "right" ? 500 : -500, 
+                opacity: 0,
+                rotate: direction === "right" ? 20 : -20 
+              }}
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              onDragEnd={(e, info) => {
+                if (info.offset.x > 100) handleSwipe("right");
+                else if (info.offset.x < -100) handleSwipe("left");
+              }}
+              className="absolute inset-0 bg-white rounded-3xl shadow-2xl border border-gray-100 cursor-grab active:cursor-grabbing overflow-hidden"
+            >
+              {/* Profile Image/Placeholder */}
+              <div className="h-2/3 bg-indigo-100 flex items-center justify-center">
+                {profile.profilePic ? (
+                  <img src={profile.profilePic} alt={profile.name} className="w-full h-full object-cover" />
+                ) : (
+                  <Star size={80} className="text-indigo-300" />
+                )}
               </div>
-              {/* MESSAGE BUTTON */}
-              <button 
-                onClick={() => setSelectedUser(match)}
-                className="bg-primary text-white p-2 rounded-full hover:bg-opacity-80"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                </svg>
-              </button>
+
+              {/* User Info */}
+              <div className="p-6">
+                <h2 className="text-2xl font-bold text-gray-800">{profile.name}</h2>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {profile.interests?.map((interest, i) => (
+                    <span 
+                      key={i} 
+                      className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs font-semibold"
+                    >
+                      {interest}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+
+        {currentIndex >= profiles.length && (
+          <div className="flex flex-col items-center justify-center h-full text-center p-6">
+            <div className="bg-white p-8 rounded-full shadow-inner mb-4">
+              <Star size={48} className="text-gray-300" />
             </div>
+            <h3 className="text-xl font-bold text-gray-700">No more profiles!</h3>
+            <p className="text-gray-500">Check back later for more matches.</p>
           </div>
-        ))}
+        )}
       </div>
 
-      {/* CHAT OVERLAY / MODAL */}
-      {selectedUser && (
-        <div className="fixed bottom-4 right-4 z-50">
-          <div className="relative">
-            <button 
-              onClick={() => setSelectedUser(null)}
-              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs"
-            >
-              ✕
-            </button>
-            <PrivateChat 
-              receiverId={selectedUser._id} 
-              receiverName={selectedUser.name} 
-            />
-          </div>
+      {/* Action Buttons */}
+      {currentIndex < profiles.length && (
+        <div className="flex gap-6 mt-8">
+          <button 
+            onClick={() => handleSwipe("left")}
+            className="p-4 bg-white text-red-500 rounded-full shadow-lg hover:scale-110 transition active:bg-red-50"
+          >
+            <X size={32} />
+          </button>
+          <button 
+            onClick={() => handleSwipe("right")}
+            className="p-4 bg-white text-green-500 rounded-full shadow-lg hover:scale-110 transition active:bg-green-50"
+          >
+            <Heart size={32} />
+          </button>
         </div>
       )}
-      <button 
-    onClick={() => navigate(`/private-chat/${match._id}`)}
-    className="bg-primary text-white p-2 rounded-full hover:bg-opacity-80"
-  >
-    {/* SVG Icon */}
-  </button>
     </div>
   );
 };

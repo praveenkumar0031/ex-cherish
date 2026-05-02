@@ -36,6 +36,7 @@ app.use("/api/users", userRoutes);
 //app.use("/api/profile", profileRoutes);
 app.use("/api/rooms", roomRoutes); 
 app.use("/api/profiles", profileRoutes);
+
 app.get("/", (req, res) => {
   res.send("Excherish API is running...");
 });

@@ -67,3 +67,16 @@ export const getMessages = async (req, res) => {
     res.status(500).json({ error: "Error fetching messages" });
   }
 };
+export const getRoomMessages = async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    // Find messages where the 'room' field matches the ID
+    const messages = await Message.find({ room: roomId })
+      .populate("sender", "name profilePic")
+      .sort({ createdAt: 1 }); // Sort by time, oldest first
+      
+    res.status(200).json(messages);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching messages", error: error.message });
+  }
+};

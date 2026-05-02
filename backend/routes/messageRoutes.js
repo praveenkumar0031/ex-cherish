@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.post("/send", authmiddleware, sendMessage);
 // Support both /api/messages/get (query params) and /api/messages/get/:roomId
-router.get("/get/:roomId", authmiddleware, getMessages); 
+router.get("/room/:roomId", authmiddleware, getMessages); 
 router.get("/private", authmiddleware, getMessages);
 
 export default router;
