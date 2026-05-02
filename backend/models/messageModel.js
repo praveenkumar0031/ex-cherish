@@ -1,17 +1,12 @@
-import mongoose from "mongoose";
+const mongoose = require('mongoose');
 
 const messageSchema = new mongoose.Schema({
-  room: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: "Room", 
-    required: true 
-  },
-  sender: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: "User", 
-    required: true 
-  },
-  text: { type: String, required: true },
-}, { timestamps: true });
+  sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  receiver: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // For individual
+  room: { type: mongoose.Schema.Types.ObjectId, ref: 'Room' },     // For room chat
+  content: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now, expires: 86400 } // 86400 seconds = 24 hours
+});
 
-export default mongoose.model("Message", messageSchema);
+// The 'expires' property automatically creates a TTL index in MongoDB.
+module.exports = mongoose.model('Message', messageSchema);
