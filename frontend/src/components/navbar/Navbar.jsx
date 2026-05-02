@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Sparkles, User, LogOut, Settings } from "lucide-react";
+import { Sparkles, User, LogOut, Settings, MessageSquare, Users, Search } from "lucide-react";
 
 const Navbar = ({ user, setUser }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -16,7 +16,7 @@ const Navbar = ({ user, setUser }) => {
     };
     window.addEventListener("storage", syncUser);
     return () => window.removeEventListener("storage", syncUser);
-  }, []);
+  }, [setUser]);
 
   // Close dropdown if clicked outside
   useEffect(() => {
@@ -34,7 +34,6 @@ const Navbar = ({ user, setUser }) => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     setUser(null);
-
     navigate("/home");
   };
 
@@ -51,51 +50,37 @@ const Navbar = ({ user, setUser }) => {
           <h1 className="text-xl font-bold text-gray-800">Ex-cherish</h1>
         </div>
 
-        {/* NAV LINKS – visible only when user is logged in */}
+        {/* NAV LINKS – updated for Room Chat and Discovery */}
         {user && (
           <div className="hidden md:flex space-x-8 font-medium text-gray-700">
             <button
-              onClick={() => navigate("/home")}
-              className={`hover:text-blue-600 transition ${
-                location.pathname === "/home"
-                  ? "text-blue-600 font-semibold"
-                  : ""
-              }`}
-            >
-              Home
-            </button>
-
-            <button
               onClick={() => navigate("/dashboard")}
-              className={`hover:text-blue-600 transition ${
-                location.pathname === "/explore"
-                  ? "text-blue-600 font-semibold"
-                  : ""
+              className={`flex items-center gap-1 hover:text-blue-600 transition ${
+                location.pathname === "/dashboard" ? "text-blue-600 font-semibold" : ""
               }`}
             >
-              Explore
-            </button>
-
-            <button
-              onClick={() => navigate("/chat")}
-              className={`hover:text-blue-600 transition ${
-                location.pathname === "/chat"
-                  ? "text-blue-600 font-semibold"
-                  : ""
-              }`}
-            >
-              Chat
+              Dashboard
             </button>
 
             <button
               onClick={() => navigate("/discover")}
-              className={`hover:text-blue-600 transition ${
-                location.pathname === "/discover"
+              className={`flex items-center gap-1 hover:text-blue-600 transition ${
+                location.pathname === "/discover" ? "text-blue-600 font-semibold" : ""
+              }`}
+            >
+              <Search size={18} /> Discover
+            </button>
+
+            {/* Changed from /chat to /rooms to view Interest Groups */}
+            <button
+              onClick={() => navigate("/rooms")}
+              className={`flex items-center gap-1 hover:text-blue-600 transition ${
+                location.pathname.includes("/rooms") || location.pathname.includes("/interest-chat")
                   ? "text-blue-600 font-semibold"
                   : ""
               }`}
             >
-              Connect
+              <Users size={18} /> Interest Groups
             </button>
           </div>
         )}
@@ -137,6 +122,17 @@ const Navbar = ({ user, setUser }) => {
                   <User size={18} /> Profile
                 </button>
 
+                {/* Optional: Quick link to Private Chats if you have a list page */}
+                <button
+                  onClick={() => {
+                    setDropdownOpen(false);
+                    navigate("/discover"); // Or a specific /messages route if created
+                  }}
+                  className="flex items-center gap-2 w-full px-4 py-2 text-gray-700 hover:bg-blue-50"
+                >
+                  <MessageSquare size={18} /> Private Chats
+                </button>
+
                 <button
                   onClick={() => {
                     setDropdownOpen(false);
@@ -147,9 +143,11 @@ const Navbar = ({ user, setUser }) => {
                   <Settings size={18} /> Settings
                 </button>
 
+                <div className="border-t border-gray-100"></div>
+
                 <button
                   onClick={handleLogout}
-                  className="flex items-center gap-2 w-full px-4 py-2 text-gray-700 hover:bg-blue-50"
+                  className="flex items-center gap-2 w-full px-4 py-2 text-red-600 hover:bg-red-50"
                 >
                   <LogOut size={18} /> Logout
                 </button>

@@ -8,13 +8,15 @@ import Dashboard from "./components/landing/DashBoard";
 import Profile from "./components/profile/Profile";
 import EditProfile from "./components/profile/EditProfile";
 import Navbar from "./components/navbar/Navbar";
-import Connect from "./components/room/Connect";
+
 import Home from "./pages/Home.jsx";
 import SettingsTab from "./components/landing/SettingsTab.jsx";
 
 // Import new components
-import ChatRoom from "./components/room/ChatRoom.jsx"; 
 import DiscoveryPage from "./components/match/DiscoveryPage.jsx";
+import RoomsPage from "./components/match/RoomsPage.jsx"; // Component to list available rooms
+import InterestChat from "./components/chat/InterestedChat.jsx"; // Group chat component
+import PrivateChat from "./components/chat/PrivateChat.jsx"; // 1-on-1 chat component
 
 import "./App.css";
 
@@ -46,7 +48,6 @@ function App() {
     );
   }
 
-  // Helper for Protected Routes to keep the JSX clean
   const ProtectedRoute = ({ children, title }) => {
     return user ? (
       <Title title={title}>{children}</Title>
@@ -79,20 +80,28 @@ function App() {
             <Route path="/edit-profile" element={<ProtectedRoute title="Edit Profile"><EditProfile user={user} setUser={setUser} /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute title="Settings"><SettingsTab user={user} /></ProtectedRoute>} />
             
-            {/* SKILL EXCHANGE ROOMS */}
-            <Route path="/room" element={<ProtectedRoute title="Skill Rooms"><Connect user={user} /></ProtectedRoute>} />
+            {/* INTEREST ROOMS - List of all rooms */}
+            <Route 
+              path="/rooms" 
+              element={<ProtectedRoute title="Interest Groups"><RoomsPage user={user} /></ProtectedRoute>} 
+            />
 
-            {/* NEW: DISCOVERY / MATCHMAKING */}
+            {/* DYNAMIC INTEREST CHAT - Joining a specific group */}
+            <Route 
+              path="/interest-chat/:roomId" 
+              element={<ProtectedRoute title="Interest Group Chat"><InterestChat user={user} /></ProtectedRoute>} 
+            />
+
+            {/* DISCOVERY / MATCHMAKING */}
             <Route 
               path="/discover" 
               element={<ProtectedRoute title="Discover Matches"><DiscoveryPage user={user} /></ProtectedRoute>} 
             />
 
-            {/* NEW: DYNAMIC CHAT ROOM */}
-            {/* We use :roomId so the component can grab the ID from the URL */}
+            {/* PRIVATE 1-on-1 CHAT */}
             <Route 
-              path="/chat/:roomId" 
-              element={<ProtectedRoute title="Chat"><ChatRoom user={user} /></ProtectedRoute>} 
+              path="/private-chat/:receiverId" 
+              element={<ProtectedRoute title="Private Chat"><PrivateChat user={user} /></ProtectedRoute>} 
             />
 
             {/* DEFAULT ROUTE */}

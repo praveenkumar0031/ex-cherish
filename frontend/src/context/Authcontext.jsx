@@ -1,7 +1,8 @@
 // src/context/AuthContext.jsx
 import { createContext, useContext, useState } from "react";
 
-const AuthContext = createContext();
+// Add 'export' here so other files can import { AuthContext }
+export const AuthContext = createContext(); 
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(
@@ -25,4 +26,5 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-export const useAuth = () => useContext(Authcontext);
+// Fixed the typo from Authcontext to AuthContext
+export const useAuth = () => useContext(AuthContext);

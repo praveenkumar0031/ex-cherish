@@ -21,7 +21,11 @@ dotenv.config();
 connectDB();
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: "http://localhost:5173", // Replace with your actual frontend URL if different
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
@@ -40,8 +44,9 @@ app.use("/api/upload", uploadRoutes);
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: process.env.FRONTEND,
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    origin: "http://localhost:5173", // Must match exactly
+    methods: ["GET", "POST"],
+    credentials: true
   },
 });
 
@@ -49,14 +54,22 @@ io.on("connection", (socket) => {
   console.log("Connected:", socket.id);
 
   // --- PERSONAL CHAT (REMAINED) ---
-  socket.on("join", (username) => {
-    socket.join(username);
-  });
+ // --- PERSONAL CHAT (REMAINED) ---
+socket.on("join", (userId) => {
+  socket.join(userId); // User joins their own private channel
+  console.log(`User ${userId} is ready for private messages`);
+});
 
-  socket.on("sendMessage", (data) => {
-    const { receiver } = data;
-    io.to(receiver).emit("receiveMessage", data);
+socket.on("sendMessage", (data) => {
+  const { receiver, senderId, text, senderName } = data;
+  // Emit to the receiver's private channel
+  io.to(receiver).emit("receiveMessage", {
+    senderId,
+    text,
+    senderName,
+    createdAt: new Date()
   });
+});
 
   // --- EXCHERISH ROOM CHAT (SYNCHRONIZED) ---
   

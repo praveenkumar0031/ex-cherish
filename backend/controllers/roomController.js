@@ -1,25 +1,35 @@
 import Room from "../models/Room.js";
 
-// ✅ 1. Create a new Room/Topic (Skill Exchange Card)
+// ✅ 1. Consolidated Create Room/Topic
+// This merges your two previous versions into one robust function
 export const createRoom = async (req, res) => {
   const { name, topic, skillOffered, skillDesired } = req.body;
   const userId = req.user.id;
 
   try {
+    if (!name) {
+      return res.status(400).json({ message: "Room name is required" });
+    }
+
     const nameExists = await Room.findOne({ name });
-    if (nameExists) return res.status(400).json({ message: "Room name already exists." });
+    if (nameExists) {
+      return res.status(400).json({ message: "Room name already exists." });
+    }
 
     const room = await Room.create({
       name,
-      topic, 
+      topic: topic || "General", // Default topic if not provided
       skillOffered,
       skillDesired,
       createdBy: userId,
       members: [userId],
-      isGroup: true // Public skill cards are groups
+      isGroup: true // Public skill cards are typically groups
     });
 
-    res.status(201).json(room);
+    res.status(201).json({
+      message: "Room created successfully",
+      room
+    });
   } catch (error) {
     res.status(500).json({ message: "Server Error", error: error.message });
   }
@@ -47,7 +57,7 @@ export const joinRoom = async (req, res) => {
   }
 };
 
-// ✅ 3. Find or Create a Private 1-on-1 Room (Dating/Matching Style)
+// ✅ 3. Find or Create a Private 1-on-1 Room
 export const getOrCreatePrivateChat = async (req, res) => {
   const myId = req.user.id;
   const { targetUserId } = req.body;
@@ -72,10 +82,9 @@ export const getOrCreatePrivateChat = async (req, res) => {
   }
 };
 
-// ✅ 4. Discover all Public Skill Cards (For Landing Page)
+// ✅ 4. Discover all Public Skill Cards
 export const discoverAllCards = async (req, res) => {
   try {
-    // Fetch rooms that are groups and have only 1 member (waiting for a partner)
     const rooms = await Room.find({ isGroup: true, status: 'active' })
       .populate("members", "name profilePic");
     res.json(rooms);
@@ -93,5 +102,22 @@ export const getMyRooms = async (req, res) => {
     res.json(rooms);
   } catch (error) {
     res.status(500).json({ message: "Error fetching your chats" });
+  }
+};
+
+// ✅ 6. Get All Rooms (For Admin or Global List)
+export const getAllRooms = async (req, res) => {
+  try {
+    // 1. First, try a simple find to see if it works without population
+    const rooms = await Room.find().sort({ createdAt: -1 });
+    
+    // 2. Log the result to the backend terminal
+    console.log(`Found ${rooms.length} rooms`);
+    
+    res.status(200).json(rooms);
+  } catch (error) {
+    // This will print the specific Mongoose error to your terminal
+    console.error("DATABASE QUERY ERROR:", error.message); 
+    res.status(500).json({ message: "Error fetching rooms", error: error.message });
   }
 };

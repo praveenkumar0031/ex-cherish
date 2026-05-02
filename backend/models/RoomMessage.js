@@ -1,3 +1,4 @@
+// backend/models/RoomMessage.js
 import mongoose from "mongoose";
 
 const roomMessageSchema = new mongoose.Schema({
