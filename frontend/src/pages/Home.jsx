@@ -2,8 +2,10 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 
 
+import { useAuth } from "../context/AuthContext";
 import { Shield, MessageCircle, Star, UserCheck, Users, BookOpen, Heart, Lightbulb, Globe, Book } from "lucide-react";
 
+// eslint-disable-next-line no-unused-vars
 const FeatureCard = ({ icon: Icon, title, description }) => (
   <div className="bg-white p-6 rounded-2xl shadow-lg transform transition hover:scale-105 hover:shadow-2xl border-l-4 border-blue-500">
     <div className="p-4 bg-blue-100 rounded-full w-14 h-14 flex items-center justify-center mb-4">
@@ -14,6 +16,7 @@ const FeatureCard = ({ icon: Icon, title, description }) => (
   </div>
 );
 
+// eslint-disable-next-line no-unused-vars
 const BenefitCard = ({ icon: Icon, text }) => (
   <div className="bg-white p-4 rounded-xl shadow-md flex items-start gap-3 transform transition hover:scale-105 hover:shadow-xl border-l-4 border-purple-500">
     <div className="p-2 bg-purple-100 rounded-full">
@@ -26,6 +29,8 @@ const BenefitCard = ({ icon: Icon, text }) => (
 
 const Home = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
   return (
     <div className="space-y-16">
       {/* Hero */}
@@ -36,10 +41,10 @@ const Home = () => {
           Connect, share knowledge, and grow together. Excherish brings curious minds together to inspire learning and collaboration.
         </p>
         <button
-          onClick={() => navigate("/login")}
+          onClick={() => navigate(user ? "/dashboard" : "/login")}
           className="bg-white text-blue-700 font-semibold px-6 md:px-8 py-2 md:py-3 rounded-full shadow-lg hover:shadow-xl transition transform hover:-translate-y-1 hover:scale-105"
         >
-          Get Started
+          {user ? "Go to Dashboard" : "Get Started"}
         </button>
       </section>
 

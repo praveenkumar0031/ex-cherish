@@ -1,6 +1,7 @@
 // frontend/src/context/AuthContext.jsx
 import { createContext, useContext, useState, useEffect } from "react";
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
@@ -10,14 +11,23 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const savedUser = localStorage.getItem("user");
     if (savedUser) {
-      setUser(JSON.parse(savedUser)); // Re-load user from storage
+      const parsedUser = JSON.parse(savedUser);
+      // Ensure id is present for consistency
+      if (parsedUser && !parsedUser.id) {
+        parsedUser.id = parsedUser._id;
+      }
+      setUser(parsedUser);
     }
     setLoading(false);
   }, []);
 
   const login = (userData) => {
-    setUser(userData);
-    localStorage.setItem("user", JSON.stringify(userData)); //
+    const normalizedUser = { ...userData, id: userData.id || userData._id };
+    setUser(normalizedUser);
+    localStorage.setItem("user", JSON.stringify(normalizedUser));
+    if (normalizedUser.token) {
+      localStorage.setItem("token", normalizedUser.token);
+    }
   };
 
   const logout = () => {
@@ -33,4 +43,5 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => useContext(AuthContext);

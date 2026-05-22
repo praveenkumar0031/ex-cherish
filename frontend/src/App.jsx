@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { useAuth } from "./context/AuthContext";
 
 import Title from "./components/title/Title";
 import Login from "./components/Login";
@@ -14,37 +15,23 @@ import SettingsTab from "./components/landing/SettingsTab.jsx";
 
 // Import new components
 import DiscoveryPage from "./components/match/DiscoveryPage.jsx";
-import RoomsPage from "./components/match/RoomsPage.jsx"; // Component to list available rooms
-import InterestChat from "./components/chat/InterestedChat.jsx"; // Group chat component
-import PrivateChat from "./components/chat/PrivateChat.jsx"; // 1-on-1 chat component
-import Meetings from "./pages/Meetings.jsx";
+import RoomsPage from "./components/match/RoomsPage.jsx"; 
+import InterestChat from "./components/chat/InterestedChat.jsx"; 
+import PrivateChat from "./components/chat/PrivateChat.jsx"; 
+import CallsDashboard from "./pages/CallsDashboard.jsx"; 
 
 import "./App.css";
 
 function App() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
-
-    if (token && storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem("user", JSON.stringify(user));
-    }
-  }, [user]);
+  const { user, loading } = useAuth();
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen text-gray-600">
-        Loading...
+      <div className="flex items-center justify-center h-screen text-gray-600 bg-gray-50 font-medium">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          Synchronizing session...
+        </div>
       </div>
     );
   }
@@ -60,14 +47,15 @@ function App() {
   return (
     <Router>
       <div className="min-h-screen bg-gray-50">
-        <Navbar user={user} setUser={setUser} />
+        <Navbar />
 
         <div className="pt-16">
           <Routes>
             {/* PUBLIC ROUTES */}
+            <Route path="/" element={<Title title="Welcome to Excherish"><Home /></Title>} />
             <Route
               path="/login"
-              element={user ? <Navigate to="/dashboard" /> : <Title title="Login"><Login setUser={setUser} /></Title>}
+              element={user ? <Navigate to="/dashboard" /> : <Title title="Login"><Login /></Title>}
             />
             <Route
               path="/register"
@@ -75,44 +63,38 @@ function App() {
             />
 
             {/* PROTECTED ROUTES */}
-            <Route path="/dashboard" element={<ProtectedRoute title="Dashboard"><Dashboard user={user} /></ProtectedRoute>} />
-            <Route path="/home" element={<ProtectedRoute title="Home"><Home user={user} /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute title="Profile"><Profile user={user} /></ProtectedRoute>} />
-            <Route path="/edit-profile" element={<ProtectedRoute title="Edit Profile"><EditProfile user={user} setUser={setUser} /></ProtectedRoute>} />
-            <Route path="/settings" element={<ProtectedRoute title="Settings"><SettingsTab user={user} /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute title="Dashboard"><Dashboard /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute title="Profile"><Profile /></ProtectedRoute>} />
+            <Route path="/edit-profile" element={<ProtectedRoute title="Edit Profile"><EditProfile /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute title="Settings"><SettingsTab /></ProtectedRoute>} />
             
-            {/* INTEREST ROOMS - List of all rooms */}
             <Route 
               path="/rooms" 
-              element={<ProtectedRoute title="Interest Groups"><RoomsPage user={user} /></ProtectedRoute>} 
+              element={<ProtectedRoute title="Interest Groups"><RoomsPage /></ProtectedRoute>} 
             />
 
-            {/* DYNAMIC INTEREST CHAT - Joining a specific group */}
             <Route 
               path="/interest-chat/:roomId" 
-              element={<ProtectedRoute title="Interest Group Chat"><InterestChat user={user} /></ProtectedRoute>} 
+              element={<ProtectedRoute title="Interest Group Chat"><InterestChat /></ProtectedRoute>} 
             />
 
-            {/* DISCOVERY / MATCHMAKING */}
             <Route 
               path="/discover" 
-              element={<ProtectedRoute title="Discover Matches"><DiscoveryPage user={user} /></ProtectedRoute>} 
+              element={<ProtectedRoute title="Discover Matches"><DiscoveryPage /></ProtectedRoute>} 
             />
 
-            {/* PRIVATE 1-on-1 CHAT */}
             <Route 
               path="/private-chat/:receiverId" 
-              element={<ProtectedRoute title="Private Chat"><PrivateChat user={user} /></ProtectedRoute>} 
+              element={<ProtectedRoute title="Private Chat"><PrivateChat /></ProtectedRoute>} 
             />
 
-            {/* MEETINGS HUB */}
             <Route 
-              path="/meetings" 
-              element={<ProtectedRoute title="Meetings Hub"><Meetings user={user} /></ProtectedRoute>} 
+              path="/calls" 
+              element={<ProtectedRoute title="Calls Dashboard"><CallsDashboard /></ProtectedRoute>} 
             />
 
-            {/* DEFAULT ROUTE */}
-            <Route path="*" element={<Navigate to={user ? "/home" : "/login"} />} />
+            {/* DEFAULT REDIRECT */}
+            <Route path="*" element={<Navigate to={user ? "/dashboard" : "/"} />} />
           </Routes>
         </div>
       </div>

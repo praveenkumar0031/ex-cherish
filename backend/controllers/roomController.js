@@ -1,123 +1,70 @@
-import Room from "../models/Room.js";
+import asyncHandler from "express-async-handler";
+import * as roomService from "../services/roomService.js";
 
-// ✅ 1. Consolidated Create Room/Topic
-// This merges your two previous versions into one robust function
-export const createRoom = async (req, res) => {
-  const { name, topic, skillOffered, skillDesired } = req.body;
-  const userId = req.user.id;
+// @desc    Create a new room
+// @route   POST /api/rooms/create
+// @access  Private
+export const createRoom = asyncHandler(async (req, res) => {
+  const room = await roomService.createNewRoom(req.user.id, req.body);
+  res.status(201).json({
+    message: "Room created successfully",
+    room
+  });
+});
 
-  try {
-    if (!name) {
-      return res.status(400).json({ message: "Room name is required" });
-    }
+// @desc    Update room details
+// @route   PUT /api/rooms/:roomId
+// @access  Private (Admin only)
+export const updateRoom = asyncHandler(async (req, res) => {
+  const room = await roomService.updateRoomDetails(req.user.id, req.params.roomId, req.body);
+  res.json({ message: "Room updated successfully", room });
+});
 
-    const nameExists = await Room.findOne({ name });
-    if (nameExists) {
-      return res.status(400).json({ message: "Room name already exists." });
-    }
+// @desc    Join an existing room
+// @route   POST /api/rooms/join/:roomId
+// @access  Private
+export const joinRoom = asyncHandler(async (req, res) => {
+  const room = await roomService.joinExistingRoom(req.user.id, req.params.roomId);
+  res.status(200).json({ message: "Joined successfully", room });
+});
 
-    const room = await Room.create({
-      name,
-      topic: topic || "General", // Default topic if not provided
-      skillOffered,
-      skillDesired,
-      createdBy: userId,
-      members: [userId],
-      isGroup: true // Public skill cards are typically groups
-    });
+// @desc    Manage room members (Add/Remove)
+// @route   POST /api/rooms/:roomId/members
+// @access  Private (Admin only)
+export const manageMembers = asyncHandler(async (req, res) => {
+  const { userId, action } = req.body;
+  const room = await roomService.manageMember(req.user.id, req.params.roomId, userId, action);
+  res.json({ message: `Member ${action}ed successfully`, room });
+});
 
-    res.status(201).json({
-      message: "Room created successfully",
-      room
-    });
-  } catch (error) {
-    res.status(500).json({ message: "Server Error", error: error.message });
-  }
-};
+// @desc    Find or create a private 1-on-1 room
+// @route   POST /api/rooms/private
+// @access  Private
+export const getOrCreatePrivateChat = asyncHandler(async (req, res) => {
+  const room = await roomService.findOrCreatePrivate(req.user.id, req.body.targetUserId);
+  res.json(room);
+});
 
-// ✅ 2. Join an existing Room (Skill Card)
-export const joinRoom = async (req, res) => {
-  const userId = req.user.id;
-  const { roomId } = req.params;
+// @desc    Discover all public rooms
+// @route   GET /api/rooms/discover
+// @access  Public
+export const discoverAllCards = asyncHandler(async (req, res) => {
+  const rooms = await roomService.getPublicRooms();
+  res.json(rooms);
+});
 
-  try {
-    const room = await Room.findById(roomId);
-    if (!room) return res.status(404).json({ message: "Room not found" });
+// @desc    Get current user's rooms
+// @route   GET /api/rooms/my-chats
+// @access  Private
+export const getMyRooms = asyncHandler(async (req, res) => {
+  const rooms = await roomService.getUserRooms(req.user.id);
+  res.json(rooms);
+});
 
-    if (room.members.includes(userId)) {
-      return res.status(200).json({ message: "Already a member", room });
-    }
-
-    room.members.push(userId);
-    await room.save();
-
-    res.status(200).json({ message: "Joined successfully", room });
-  } catch (error) {
-    res.status(500).json({ message: "Error joining room" });
-  }
-};
-
-// ✅ 3. Find or Create a Private 1-on-1 Room
-export const getOrCreatePrivateChat = async (req, res) => {
-  const myId = req.user.id;
-  const { targetUserId } = req.body;
-
-  try {
-    let room = await Room.findOne({
-      isGroup: false, 
-      members: { $all: [myId, targetUserId], $size: 2 }
-    });
-
-    if (!room) {
-      room = await Room.create({
-        name: "Private Chat",
-        members: [myId, targetUserId],
-        isGroup: false, 
-      });
-    }
-
-    res.json(room);
-  } catch (error) {
-    res.status(500).json({ message: "Error starting private chat" });
-  }
-};
-
-// ✅ 4. Discover all Public Skill Cards
-export const discoverAllCards = async (req, res) => {
-  try {
-    const rooms = await Room.find({ isGroup: true, status: 'active' })
-      .populate("members", "name profilePic");
-    res.json(rooms);
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching cards" });
-  }
-};
-
-// ✅ 5. Get My Active Chats (Both Groups & Private)
-export const getMyRooms = async (req, res) => {
-  try {
-    const rooms = await Room.find({ members: req.user.id })
-      .populate("members", "name profilePic")
-      .sort({ updatedAt: -1 });
-    res.json(rooms);
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching your chats" });
-  }
-};
-
-// ✅ 6. Get All Rooms (For Admin or Global List)
-export const getAllRooms = async (req, res) => {
-  try {
-    // 1. First, try a simple find to see if it works without population
-    const rooms = await Room.find().sort({ createdAt: -1 });
-    
-    // 2. Log the result to the backend terminal
-    console.log(`Found ${rooms.length} rooms`);
-    
-    res.status(200).json(rooms);
-  } catch (error) {
-    // This will print the specific Mongoose error to your terminal
-    console.error("DATABASE QUERY ERROR:", error.message); 
-    res.status(500).json({ message: "Error fetching rooms", error: error.message });
-  }
-};
+// @desc    Get all rooms (Global)
+// @route   GET /api/rooms/
+// @access  Private
+export const getAllRooms = asyncHandler(async (req, res) => {
+  const rooms = await roomService.listAllRooms();
+  res.status(200).json(rooms);
+});

@@ -1,55 +1,19 @@
-import User from "../models/userModel.js";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
+import asyncHandler from "express-async-handler";
+import * as userService from "../services/userService.js";
 
-// REGISTER
-export const registerUser = async (req, res) => {
-  try {
-    const { name, email, password } = req.body;
+// @desc    Register a new user
+// @route   POST /api/users/register
+// @access  Public
+export const registerUser = asyncHandler(async (req, res) => {
+  const user = await userService.register(req.body);
+  res.status(201).json(user);
+});
 
-    const exist = await User.findOne({ email });
-    if (exist) return res.status(400).json({ message: "User exists" });
-
-    const hash = await bcrypt.hash(password, 10);
-    const user = await User.create({ name, email, password: hash });
-
-    res.status(201).json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      profilePic: user.profilePic || null,
-    });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
-
-
-// LOGIN
-export const loginUser = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) return res.status(400).json({ message: "Invalid password" });
-
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "1d",
-    });
-
-    res.json({
-      token,
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        profilePic: user.profilePic || null,
-      },
-    });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
+// @desc    Authenticate a user
+// @route   POST /api/users/login
+// @access  Public
+export const loginUser = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+  const result = await userService.login(email, password);
+  res.json(result);
+});

@@ -1,8 +1,10 @@
 import express from "express";
-import { authmiddleware } from "../middleware/authMiddleware.js";
+import { protect } from "../middlewares/authMiddleware.js";
 import { 
   createRoom, 
+  updateRoom,
   joinRoom, 
+  manageMembers,
   getOrCreatePrivateChat, 
   discoverAllCards, 
   getMyRooms,
@@ -11,14 +13,13 @@ import {
 
 const router = express.Router();
 
-// Route to fetch all rooms (used by RoomsPage.jsx)
-router.get("/", authmiddleware, getAllRooms); 
-
-// FIX: Add this line to handle POST http://localhost:5000/api/rooms/create
-router.post("/create", authmiddleware, createRoom); 
-
-router.get("/my-chats", authmiddleware, getMyRooms);
+router.get("/", protect, getAllRooms); 
+router.post("/create", protect, createRoom); 
+router.put("/:roomId", protect, updateRoom);
+router.post("/join/:roomId", protect, joinRoom);
+router.post("/:roomId/members", protect, manageMembers);
+router.get("/my-chats", protect, getMyRooms);
 router.get("/discover", discoverAllCards);
-router.post("/private", authmiddleware, getOrCreatePrivateChat);
+router.post("/private", protect, getOrCreatePrivateChat);
 
 export default router;

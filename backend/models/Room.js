@@ -4,10 +4,20 @@ const roomSchema = new mongoose.Schema(
   {
     name: { 
       type: String, 
+      required: true,
       trim: true 
     },
+    description: {
+      type: String,
+      trim: true,
+      default: ""
+    },
+    avatar: {
+      type: String,
+      default: ""
+    },
     topic: { 
-      type: String // Useful for your "Skill Exchange" or "Interest" topics
+      type: String 
     },
     members: [
       { 
@@ -15,16 +25,25 @@ const roomSchema = new mongoose.Schema(
         ref: "User" 
       }
     ],
+    admins: [
+      { 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: "User" 
+      }
+    ],
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User"
+    },
     isGroup: { 
       type: Boolean, 
-      default: true // true for public topics, false for 1-on-1 matches
+      default: true 
     },
     status: { 
       type: String, 
       enum: ["active", "archived"], 
       default: "active" 
     },
-    // For Skill Exchange specific features
     skillOffered: { type: String },
     skillDesired: { type: String },
   },

@@ -99,7 +99,7 @@ export default function SettingsTab() {
                 const parsed = JSON.parse(reader.result);
                 setSettings(prev => ({ ...prev, ...parsed }));
                 setDirty(true);
-            } catch (e) {
+            } catch {
                 alert("Invalid settings file (must be valid JSON).");
             }
         };
@@ -331,7 +331,7 @@ export default function SettingsTab() {
                                     id="import-settings"
                                     type="file"
                                     accept="application/json"
-                                    onChange={e => handleImport(e.target.files?.[0])}
+                                    onChange={_e => handleImport(_e.target.files?.[0])}
                                     className="hidden"
                                 />
                             </label>
@@ -370,7 +370,7 @@ export default function SettingsTab() {
                                 setSettings(JSON.parse(raw));
                                 setDirty(false);
                                 setSavedAt(new Date().toISOString());
-                            } catch (e) { alert('Failed to load saved settings.'); }
+                            } catch { alert('Failed to load saved settings.'); }
                         }} className="btn btn-outline">
                             Load saved
                         </button>

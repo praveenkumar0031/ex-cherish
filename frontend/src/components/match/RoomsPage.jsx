@@ -1,25 +1,23 @@
-// frontend/src/components/match/RoomsPage.jsx
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import InterestChat from '../chat/InterestedChat';
-import { PlusCircle, Hash } from 'lucide-react'; // Added icons for better UI
+import API from '../../services/api';
+import { Plus, Hash, Users, Sparkles, ArrowRight, Search, Zap } from 'lucide-react';
+// eslint-disable-next-line no-unused-vars
+import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import CreateGroupModal from '../chat/CreateGroupModal';
 
 const RoomsPage = () => {
     const [rooms, setRooms] = useState([]);
-    const [activeRoom, setActiveRoom] = useState(null);
-    const [newRoomName, setNewRoomName] = useState("");
-    const [isCreating, setIsCreating] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
+    const navigate = useNavigate();
 
-    // Fetch rooms from backend
     const fetchRooms = async () => {
         try {
-            const token = localStorage.getItem("token");
-            const res = await axios.get("http://localhost:5000/api/rooms", {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const res = await API.get("rooms/discover");
             setRooms(res.data);
         } catch (err) {
-            console.error("Error fetching rooms:", err.response?.status);
+            console.error("Error fetching rooms:", err);
         }
     };
 
@@ -27,111 +25,131 @@ const RoomsPage = () => {
         fetchRooms();
     }, []);
 
-    // Handle Room Creation
-    const handleCreateRoom = async (e) => {
-        e.preventDefault();
-        if (!newRoomName.trim()) return;
-
+    const handleJoinRoom = async (roomId) => {
         try {
-            const token = localStorage.getItem("token");
-            const res = await axios.post("http://localhost:5000/api/rooms/create", 
-                { name: newRoomName }, 
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-
-            // Add new room to list and clear input
-            setRooms((prev) => [...prev, res.data.room]);
-            setNewRoomName("");
-            setIsCreating(false);
-            // Optionally set the new room as active
-            setActiveRoom(res.data.room);
+            await API.post(`rooms/join/${roomId}`);
+            navigate(`/interest-chat/${roomId}`);
         } catch (err) {
-            console.error("Error creating room:", err.response?.data?.message || err.message);
-            alert("Failed to create room: " + (err.response?.data?.message || "Internal Error"));
+            console.error("Failed to join room", err);
         }
     };
 
+    const filteredRooms = rooms.filter(room => 
+        room.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        room.topic?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
     return (
-        <div className="flex h-screen bg-gray-100">
-            {/* Sidebar: Room List */}
-            <div className="w-1/4 bg-white border-r flex flex-col">
-                <div className="p-4 border-b flex justify-between items-center">
-                    <h2 className="text-xl font-bold text-gray-800">Interest Groups</h2>
-                    <button 
-                        onClick={() => setIsCreating(!isCreating)}
-                        className="text-indigo-600 hover:text-indigo-800 transition"
-                        title="Create New Room"
-                    >
-                        <PlusCircle size={24} />
-                    </button>
+        <div className="min-h-[calc(100vh-64px)] bg-[#fafbff] p-8">
+            <div className="max-w-7xl mx-auto">
+                
+                {/* Header */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+                    <div>
+                        <motion.h1 
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="text-4xl font-black text-gray-900 tracking-tight"
+                        >
+                            Interest <span className="text-blue-600">Groups</span>
+                        </motion.h1>
+                        <p className="text-gray-500 mt-2 font-medium">Discover communities and share your skills.</p>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                            <input 
+                                type="text"
+                                placeholder="Search groups..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="pl-10 pr-6 py-3 bg-white border border-gray-100 rounded-2xl shadow-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all w-full md:w-64"
+                            />
+                        </div>
+                        <button 
+                            onClick={() => setIsModalOpen(true)}
+                            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-blue-200 transition-all active:scale-95 whitespace-nowrap"
+                        >
+                            <Plus size={20} /> Create Group
+                        </button>
+                    </div>
                 </div>
 
-                {/* Create Room Form (Conditional) */}
-                {isCreating && (
-                    <form onSubmit={handleCreateRoom} className="p-4 bg-indigo-50 border-b">
-                        <input 
-                            type="text"
-                            placeholder="Room name (e.g. JavaScript)"
-                            value={newRoomName}
-                            onChange={(e) => setNewRoomName(e.target.value)}
-                            className="w-full p-2 border rounded md text-sm mb-2 outline-none focus:ring-2 focus:ring-indigo-400"
-                            autoFocus
-                        />
-                        <div className="flex gap-2">
+                <CreateGroupModal 
+                    isOpen={isModalOpen} 
+                    onClose={() => setIsModalOpen(false)} 
+                    onCreated={(newRoom) => navigate(`/interest-chat/${newRoom._id}`)} 
+                />
+
+                {/* Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {filteredRooms.map((room, index) => (
+                        <motion.div
+                            key={room._id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                            className="bg-white rounded-[2rem] p-8 shadow-sm border border-gray-50 hover:shadow-xl hover:shadow-blue-900/5 transition-all group relative overflow-hidden"
+                        >
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full blur-3xl -mr-16 -mt-16 opacity-50 group-hover:bg-blue-100 transition-colors" />
+                            
+                            <div className="relative z-10">
+                                <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                                    <Hash size={28} />
+                                </div>
+                                
+                                <h3 className="text-2xl font-black text-gray-900 mb-2 truncate">{room.name}</h3>
+                                <div className="flex items-center gap-2 mb-6">
+                                    <div className="px-3 py-1 bg-gray-100 text-gray-500 text-[10px] font-black uppercase tracking-widest rounded-lg">
+                                        {room.topic || "General"}
+                                    </div>
+                                    <div className="flex items-center gap-1.5 text-gray-400 text-xs font-bold">
+                                        <Users size={14} /> {room.members?.length || 0} Members
+                                    </div>
+                                </div>
+
+                                <div className="space-y-3 mb-8">
+                                    {room.skillOffered && (
+                                        <div className="flex items-start gap-2">
+                                            <Zap size={14} className="text-yellow-500 mt-0.5" />
+                                            <p className="text-sm text-gray-600"><span className="font-bold text-gray-900">Offers:</span> {room.skillOffered}</p>
+                                        </div>
+                                    )}
+                                    {room.skillDesired && (
+                                        <div className="flex items-start gap-2">
+                                            <Sparkles size={14} className="text-purple-500 mt-0.5" />
+                                            <p className="text-sm text-gray-600"><span className="font-bold text-gray-900">Wants:</span> {room.skillDesired}</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <button 
+                                    onClick={() => handleJoinRoom(room._id)}
+                                    className="w-full py-4 bg-gray-900 text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-blue-600 transition-all group/btn"
+                                >
+                                    Join Community <ArrowRight size={18} className="group-hover/btn:translate-x-1 transition-transform" />
+                                </button>
+                            </div>
+                        </motion.div>
+                    ))}
+
+                    {filteredRooms.length === 0 && (
+                        <div className="col-span-full py-20 text-center bg-white/50 backdrop-blur-sm rounded-[3rem] border border-dashed border-gray-200">
+                            <div className="w-20 h-20 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center mx-auto mb-6">
+                                <Search size={32} />
+                            </div>
+                            <h3 className="text-xl font-bold text-gray-800">No groups found</h3>
+                            <p className="text-gray-500 mt-2 mb-8">Try searching for something else or create your own group!</p>
                             <button 
-                                type="submit"
-                                className="flex-1 bg-indigo-600 text-white text-xs py-2 rounded hover:bg-indigo-700 transition"
+                                onClick={() => setSearchTerm("")}
+                                className="text-blue-600 font-black uppercase tracking-widest text-xs hover:underline"
                             >
-                                Create
-                            </button>
-                            <button 
-                                type="button"
-                                onClick={() => setIsCreating(false)}
-                                className="flex-1 bg-gray-300 text-gray-700 text-xs py-2 rounded hover:bg-gray-400 transition"
-                            >
-                                Cancel
+                                Clear Search
                             </button>
                         </div>
-                    </form>
-                )}
-
-                <div className="flex-1 overflow-y-auto p-2 space-y-1">
-                    {rooms.length > 0 ? (
-                        rooms.map((room) => (
-                            <button
-                                key={room._id}
-                                onClick={() => setActiveRoom(room)}
-                                className={`w-full text-left p-3 rounded-lg flex items-center gap-2 transition ${
-                                    activeRoom?._id === room._id 
-                                    ? 'bg-indigo-600 text-white shadow-md' 
-                                    : 'text-gray-700 hover:bg-indigo-50 hover:text-indigo-600'
-                                }`}
-                            >
-                                <Hash size={18} className={activeRoom?._id === room._id ? 'text-indigo-200' : 'text-gray-400'} />
-                                <span className="font-medium">{room.name}</span>
-                            </button>
-                        ))
-                    ) : (
-                        <p className="text-center text-gray-400 mt-10 text-sm px-4">No rooms available. Create one to get started!</p>
                     )}
                 </div>
-            </div>
-
-            {/* Main Content: Chat Area */}
-            <div className="flex-1 p-6 flex flex-col">
-                {activeRoom ? (
-                    <InterestChat roomId={activeRoom._id} roomName={activeRoom.name} />
-                ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-gray-400 text-center">
-                        <div className="bg-white p-8 rounded-2xl shadow-sm border">
-                            <Hash size={48} className="mx-auto mb-4 text-indigo-100" />
-                            <h3 className="text-lg font-semibold text-gray-700">Welcome to Skill Rooms</h3>
-                            <p className="max-w-xs mt-2">
-                                Select a room from the sidebar or create a new interest group to start chatting.
-                            </p>
-                        </div>
-                    </div>
-                )}
             </div>
         </div>
     );

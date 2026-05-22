@@ -1,79 +1,55 @@
-import Profile from "../models/profileModel.js";
-import Match from "../models/Match.js";
-import Room from "../models/Room.js";
+import asyncHandler from "express-async-handler";
+import * as matchService from "../services/matchService.js";
 
-// ✅ 1. Discover Profiles based on Mutual Interests
-export const discoverProfiles = async (req, res) => {
-  try {
-    // 1. Find the logged-in user's profile
-    const myProfile = await Profile.findOne({ user: req.user.id });
+// @desc    Discover profiles based on mutual interests
+// @route   GET /api/matches/discover
+// @access  Private
+export const discoverProfiles = asyncHandler(async (req, res) => {
+  const suggestions = await matchService.getDiscoveries(req.user.id);
+  res.json(suggestions);
+});
 
-    // 2. Build the query
-    let query = { user: { $ne: req.user.id } };
-
-    // Only filter by interests if the user actually has interests saved
-    if (myProfile && myProfile.interestedAreas && myProfile.interestedAreas.length > 0) {
-      query.interestedAreas = { $in: myProfile.interestedAreas };
-    }
-
-    const suggestions = await Profile.find(query)
-      .populate("user", "name profilePic")
-      .limit(20);
-
-    res.json(suggestions);
-  } catch (error) {
-    console.error("Discovery Error:", error); // This will show you the EXACT error in your terminal
-    res.status(500).json({ message: "Server error during discovery", error: error.message });
+// @desc    Like a profile and handle mutual matches
+// @route   POST /api/matches/like
+// @access  Private
+export const likeProfile = asyncHandler(async (req, res) => {
+  // Try to get targetUserId from either params or body for flexibility
+  const targetUserId = req.params.userId || req.body.userId;
+  
+  if (!targetUserId) {
+    res.status(400);
+    throw new Error("Target User ID is required");
   }
-};
-export const likeProfile = async (req, res) => {
-  const myId = req.user.id;
-  const targetUserId = req.params.userId;
 
-  try {
-    // 1. Check if a match record already exists between these two users
-    let match = await Match.findOne({
-      users: { $all: [myId, targetUserId] }
+  const result = await matchService.processLike(req.user.id, targetUserId);
+  res.json(result);
+});
+
+// @desc    Get all mutual matches
+// @route   GET /api/matches/my-matches
+// @access  Private
+export const getMyMatches = asyncHandler(async (req, res) => {
+  const matches = await matchService.getMyMatches(req.user.id);
+  res.json(matches);
+});
+
+// @desc    Get match counts and debug stats
+// @route   GET /api/matches/debug-stats
+// @access  Private
+export const getMatchStats = asyncHandler(async (req, res) => {
+    const userId = req.user.id;
+    const Match = (await import("../models/Match.js")).default;
+    const Room = (await import("../models/Room.js")).default;
+
+    const totalMatches = await Match.countDocuments({ users: userId });
+    const mutualMatches = await Match.countDocuments({ users: userId, status: "matched" });
+    const privateRooms = await Room.countDocuments({ members: userId, isGroup: false });
+
+    res.json({
+        userId,
+        totalMatches,
+        mutualMatches,
+        privateRooms,
+        message: "If these counts are zero, no matches exist in the database for this user."
     });
-
-    // 2. If NO record exists, this is the FIRST person to show interest
-    if (!match) {
-      match = await Match.create({
-        users: [myId, targetUserId],
-        likes: [myId],
-        status: "pending"
-      });
-      return res.json({ message: "Interest sent!", status: "pending" });
-    }
-
-    // 3. If a record EXISTS but you already liked them, just return
-    if (match.likes.includes(myId)) {
-      return res.status(400).json({ message: "You already liked this user." });
-    }
-
-    // 4. THE MUTUAL MATCH LOGIC (Put your code here)
-    // This runs if 'match' exists and 'myId' is NOT in 'likes' (meaning the other person liked you first)
-    match.likes.push(myId);
-    match.status = "matched";
-    await match.save();
-
-    // Create the private 1-on-1 chat room
-    const newRoom = await Room.create({
-      name: "Private Chat",
-      members: [myId, targetUserId],
-      isGroup: false, // Important: distinguishes from skill-exchange groups
-      status: "active"
-    });
-
-    // Return the room info so the frontend can navigate(`/chat/${room._id}`)
-    return res.json({ 
-      message: "It's a Match!", 
-      status: "matched", 
-      room: newRoom 
-    });
-
-  } catch (error) {
-    console.error("Like Profile Error:", error);
-    res.status(500).json({ message: "Server error during matching" });
-  }
-};
+});

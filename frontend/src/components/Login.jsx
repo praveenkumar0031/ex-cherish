@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import API from "../services/api";
 import Register from "./Register";
 import "./Auth.css";
 
-function Login({ setUser }) {
+function Login() {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -13,6 +14,7 @@ function Login({ setUser }) {
   const [success, setSuccess] = useState("");
   const [showRegister, setShowRegister] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -28,18 +30,14 @@ function Login({ setUser }) {
     }
 
     try {
-      const res = await axios.post("http://localhost:5000/api/users/login", {
+      const res = await API.post("users/login", {
         email,
         password,
       });
 
       const { token, user } = res.data;
 
-      // --------------------------------------------
-      // 🔹 CLEAN PROFILE PIC BEFORE STORING
-      // --------------------------------------------
       let finalProfilePic = null;
-
       if (user.profilePic) {
         if (user.profilePic.startsWith("/uploads")) {
           finalProfilePic = `http://localhost:5000${user.profilePic}`;
@@ -51,14 +49,11 @@ function Login({ setUser }) {
       const cleanUser = {
         ...user,
         profilePic: finalProfilePic,
+        token: token
       };
 
-      // Store in localStorage
-      localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(cleanUser));
-
-      // Update React State
-      setUser(cleanUser);
+      // Update Context
+      login(cleanUser);
 
       setError("");
       setSuccess("Login successful! Redirecting...");

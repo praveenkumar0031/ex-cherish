@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
+import API from "../services/api";
 import "./Auth.css";
 
 function Register({ setShowRegister }) {
@@ -24,7 +24,7 @@ function Register({ setShowRegister }) {
     }
 
     try {
-      const res = await axios.post("http://localhost:5000/api/users/register", {
+      await API.post("users/register", {
         name,
         email,
         password,
@@ -76,7 +76,7 @@ function Register({ setShowRegister }) {
 
       <p>
         Already have an account?{" "}
-        <span onClick={() => setShowRegister(false)}>Login</span>
+        <span className="link" onClick={() => setShowRegister(false)}>Login</span>
       </p>
     </div>
   );
