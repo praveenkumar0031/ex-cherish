@@ -2,8 +2,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom'; // Add this
 import io from 'socket.io-client';
-import { useAuth } from '../../context/Authcontext'; 
+import { useAuth } from '../../context/AuthContext'; 
 import axios from 'axios';
+import MessageBubble from './MessageBubble';
+import ChatInput from './ChatInput';
 
 const socket = io("http://localhost:5000");
 
@@ -33,18 +35,23 @@ const PrivateChat = () => {
 
     fetchMessages();
 
-    socket.on("receiveMessage", (data) => {
+    const handleReceiveMessage = (data) => {
       // Only add message if it's from the person we are currently chatting with
       if (data.senderId === receiverId || data.senderId === user.id) {
         setChatHistory((prev) => [...prev, data]);
       }
-    });
+    };
 
-    return () => socket.off("receiveMessage");
+    socket.on("receiveMessage", handleReceiveMessage);
+
+    return () => socket.off("receiveMessage", handleReceiveMessage);
   }, [receiverId, user]);
 
-  const handleSend = async (e) => {
-    e.preventDefault();
+  useEffect(() => {
+    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatHistory]);
+
+  const handleSend = async () => {
     if (!message.trim()) return;
 
     const messageData = {
@@ -70,32 +77,35 @@ const PrivateChat = () => {
   };
 
   return (
-    <div className="flex flex-col h-[600px] w-full max-w-2xl mx-auto border rounded-lg bg-white shadow-xl">
-      <div className="p-4 border-b bg-blue-600 text-white rounded-t-lg">
-        <h3 className="font-bold">Chat Session</h3>
+    <div className="flex flex-col h-[700px] w-full max-w-3xl mx-auto border border-gray-100 rounded-3xl bg-white shadow-2xl overflow-hidden mt-6">
+      <div className="px-6 py-5 border-b bg-gradient-to-r from-blue-600 to-blue-700 text-white flex items-center justify-between">
+        <div>
+          <h3 className="font-bold text-lg">Direct Session</h3>
+          <p className="text-xs text-blue-100 opacity-80">Encrypted and private</p>
+        </div>
       </div>
       
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {chatHistory.map((msg, index) => (
-          <div key={index} className={`flex ${msg.senderId === user.id || msg.sender?._id === user.id ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[70%] p-3 rounded-lg ${msg.senderId === user.id || msg.sender?._id === user.id ? 'bg-blue-500 text-white' : 'bg-gray-200 text-black'}`}>
-              <p className="text-sm">{msg.text}</p>
-            </div>
-          </div>
-        ))}
+      <div className="flex-1 overflow-y-auto p-6 space-y-1 bg-gray-50/50">
+        {chatHistory.map((msg, index) => {
+          const isMe = msg.senderId === user.id || msg.sender?._id === user.id;
+          return (
+            <MessageBubble 
+              key={index} 
+              message={msg.text} 
+              isMe={isMe} 
+              timestamp={msg.createdAt} 
+            />
+          );
+        })}
         <div ref={scrollRef} />
       </div>
 
-      <form onSubmit={handleSend} className="p-4 border-t flex gap-2">
-        <input 
-          type="text" 
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder="Type your message..."
-          className="flex-1 p-2 border rounded-md outline-none focus:border-blue-500"
-        />
-        <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700">Send</button>
-      </form>
+      <ChatInput 
+        value={message} 
+        onChange={setMessage} 
+        onSend={handleSend} 
+        placeholder="Securely send a message..." 
+      />
     </div>
   );
 };

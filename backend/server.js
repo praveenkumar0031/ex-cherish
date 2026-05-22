@@ -11,6 +11,7 @@ import roomRoutes from "./routes/roomRoutes.js";
 import RoomMessage from "./models/RoomMessage.js"; 
 import uploadRoutes from "./routes/uploadRoutes.js";
 import matchRoutes from "./routes/matchRoutes.js";
+import meetingRoutes from "./routes/meetingRoutes.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -36,6 +37,7 @@ app.use("/api/users", userRoutes);
 //app.use("/api/profile", profileRoutes);
 app.use("/api/rooms", roomRoutes); 
 app.use("/api/profile", profileRoutes);
+app.use("/api/meetings", meetingRoutes);
 
 app.get("/", (req, res) => {
   res.send("Excherish API is running...");

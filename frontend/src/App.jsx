@@ -17,6 +17,7 @@ import DiscoveryPage from "./components/match/DiscoveryPage.jsx";
 import RoomsPage from "./components/match/RoomsPage.jsx"; // Component to list available rooms
 import InterestChat from "./components/chat/InterestedChat.jsx"; // Group chat component
 import PrivateChat from "./components/chat/PrivateChat.jsx"; // 1-on-1 chat component
+import Meetings from "./pages/Meetings.jsx";
 
 import "./App.css";
 
@@ -102,6 +103,12 @@ function App() {
             <Route 
               path="/private-chat/:receiverId" 
               element={<ProtectedRoute title="Private Chat"><PrivateChat user={user} /></ProtectedRoute>} 
+            />
+
+            {/* MEETINGS HUB */}
+            <Route 
+              path="/meetings" 
+              element={<ProtectedRoute title="Meetings Hub"><Meetings user={user} /></ProtectedRoute>} 
             />
 
             {/* DEFAULT ROUTE */}

@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
+import MessageBubble from './MessageBubble';
+import ChatInput from './ChatInput';
 
 // Initialize socket outside or wrap in useMemo to prevent multiple connections
 const socket = io(import.meta.env.VITE_BACKEND_URL || "http://localhost:5000");
@@ -63,8 +65,7 @@ const InterestChat = ({ roomId, roomName }) => {
   if (loading) return <div className="p-4 text-center">Synchronizing session...</div>;
   if (!user) return <div className="p-4 text-center text-red-500">Please log in to join the chat.</div>;
 
-  const handleSend = async (e) => {
-    e.preventDefault();
+  const handleSend = async () => {
     if (!message.trim()) return;
 
     const msgData = {
@@ -97,48 +98,36 @@ const InterestChat = ({ roomId, roomName }) => {
   };
 
   return (
-    <div className="flex flex-col h-full w-full border rounded-lg bg-gray-50 overflow-hidden">
-      <div className="p-4 bg-indigo-600 text-white shadow-md">
-        <h3 className="font-bold flex items-center gap-2">
-          <span className="opacity-70 text-xl">#</span> {roomName}
+    <div className="flex flex-col h-full w-full border border-gray-100 rounded-3xl bg-white shadow-2xl overflow-hidden">
+      <div className="px-6 py-5 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md">
+        <h3 className="font-bold flex items-center gap-2 text-lg">
+          <span className="opacity-70 text-xl font-mono">#</span> {roomName}
         </h3>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#e5e7eb]/30">
+      <div className="flex-1 overflow-y-auto p-6 space-y-1 bg-gray-50/50">
         {messages.map((msg, index) => {
           // Identify if the message is from the logged-in user
           const isMe = (msg.sender?._id || msg.sender) === (user.id || user._id);
           
           return (
-            <div key={index} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-              <span className="text-[10px] font-semibold text-gray-500 mb-1 px-2 uppercase tracking-wide">
-                {isMe ? "You" : (msg.sender?.name || "User")}
-              </span>
-              <div className={`p-3 rounded-2xl shadow-sm max-w-[75%] ${
-                isMe 
-                ? 'bg-indigo-600 text-white rounded-tr-none' 
-                : 'bg-white text-gray-800 border rounded-tl-none'
-              }`}>
-                <p className="text-sm leading-relaxed">{msg.text}</p>
-              </div>
-            </div>
+            <MessageBubble 
+              key={index} 
+              message={msg.text} 
+              isMe={isMe} 
+              timestamp={msg.createdAt} 
+            />
           );
         })}
         <div ref={scrollRef} />
       </div>
 
-      <form onSubmit={handleSend} className="p-4 bg-white border-t flex gap-2">
-        <input 
-          type="text"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder={`Message #${roomName}`}
-          className="flex-1 p-2.5 border border-gray-300 rounded-xl px-4 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
-        />
-        <button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-xl font-bold transition-colors">
-          Send
-        </button>
-      </form>
+      <ChatInput 
+        value={message} 
+        onChange={setMessage} 
+        onSend={handleSend} 
+        placeholder={`Message #${roomName}`} 
+      />
     </div>
   );
 };
