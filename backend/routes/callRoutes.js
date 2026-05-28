@@ -4,6 +4,7 @@ import {
   createInstantCall,
   scheduleCall, 
   updateCallStatus, 
+  sendCallReminder,
   getMyCalls, 
   getUpcomingCalls, 
   getCallHistory,
@@ -19,6 +20,7 @@ router.get("/room/:roomId", protect, getCallByRoomId);
 
 router.post("/create", protect, createInstantCall);
 router.post("/schedule", protect, scheduleCall);
+router.post("/:id/remind", protect, sendCallReminder);
 router.patch("/:id/status", protect, updateCallStatus);
 
 export default router;

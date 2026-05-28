@@ -18,3 +18,14 @@ export const markAsRead = async (userId, notificationId) => {
 export const clearNotifications = async (userId) => {
   return await Notification.deleteMany({ recipient: userId });
 };
+
+export const createNotification = async (data) => {
+  const notification = await Notification.create({
+    recipient: data.recipientId,
+    sender: data.senderId,
+    type: data.type,
+    message: data.message,
+    relatedCall: data.relatedCall,
+  });
+  return await notification.populate("sender", "name profilePic");
+};

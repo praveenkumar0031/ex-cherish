@@ -54,9 +54,9 @@ app.use("/uploads", express.static("uploads"));
 // Routes
 app.use("/api/matches", matchRoutes);
 app.use("/api/messages", messageRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/rooms", roomRoutes); 
-app.use("/api/profile", profileRoutes);
+app.use("/api/auth", userRoutes);
+app.use("/api/chat", roomRoutes); 
+app.use("/api/users", profileRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/calls", callRoutes);
 app.use("/api/notifications", notificationRoutes);

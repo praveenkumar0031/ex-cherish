@@ -1,6 +1,5 @@
 import * as messageService from "../services/messageService.js";
 import * as callService from "../services/callService.js";
-import Notification from "../models/Notification.js";
 
 // Keep track of online users
 const onlineUsers = new Map(); // userId -> socketId
@@ -35,20 +34,20 @@ const chatHandler = (io, socket) => {
     
     try {
       // Save to database
-      const savedMessage = await messageService.createMessage(senderId, {
+      const { message, notification } = await messageService.createMessage(senderId, {
         text,
         roomId,
         receiverId: receiver
       });
 
       const messageData = {
-        _id: savedMessage._id,
+        _id: message._id,
         senderId,
         text,
         senderName,
-        createdAt: savedMessage.createdAt,
+        createdAt: message.createdAt,
         roomId,
-        sender: savedMessage.sender
+        sender: message.sender
       };
 
       if (roomId) {
@@ -56,7 +55,10 @@ const chatHandler = (io, socket) => {
       } else if (receiver) {
         io.to(receiver).to(senderId).emit("receiveMessage", messageData);
         
-        // Notify receiver about new message if not in chat (optional)
+        // Notify receiver about new message
+        if (notification) {
+          io.to(receiver).emit("new_notification", notification);
+        }
       }
     } catch (err) {
       console.error("Error in sendMessage socket event:", err);

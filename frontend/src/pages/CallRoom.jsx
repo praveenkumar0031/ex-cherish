@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import Peer from "simple-peer";
-import { useSocket } from "../../context/SocketContext";
-import { useAuth } from "../../context/AuthContext";
+import { useSocket } from "../context/SocketContext";
+import { useAuth } from "../context/AuthContext";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import API from "../../services/api";
+import API from "../services/api";
 import { PhoneOff, Mic, MicOff, Video, VideoOff, Maximize2, Signal } from "lucide-react";
 import { motion } from "framer-motion";
 

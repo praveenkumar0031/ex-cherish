@@ -18,7 +18,7 @@ const ScheduleCallModal = ({ isOpen, onClose, receiverId, receiverName }) => {
     try {
       const res = await API.post("calls/schedule", {
         receiverId,
-        scheduledAt,
+        scheduledFor: scheduledAt,
       });
 
       if (socket && res.data.notification) {

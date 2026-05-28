@@ -1,7 +1,8 @@
-import Profile from "../models/profileModel.js";
+import Profile from "../models/Profile.js";
 import Match from "../models/Match.js";
 import Room from "../models/Room.js";
-import User from "../models/userModel.js";
+import User from "../models/User.js";
+import * as notificationService from "./notificationService.js";
 
 export const getDiscoveries = async (userId) => {
   try {
@@ -25,25 +26,32 @@ export const getDiscoveries = async (userId) => {
     
     excludedUserIds.push(userId); // Exclude self
 
-    // 3. Algorithm: Interest-based ranking
+    const myTags = (myProfile && Array.isArray(myProfile.tags)) ? myProfile.tags : [];
+    const myCategories = (myProfile && Array.isArray(myProfile.categories)) ? myProfile.categories : [];
+
+    // 3. Algorithm: Interest-based ranking (Multiple criteria)
     const suggestions = await Profile.aggregate([
       {
         $match: {
           user: { $nin: excludedUserIds },
-          interestedAreas: { $exists: true, $type: "array" }
         }
       },
       {
         $addFields: {
-          // Calculate intersection size between user's interests and others safely
-          matchScore: {
-            $size: {
-              $setIntersection: [
-                { $ifNull: ["$interestedAreas", []] }, 
-                myInterests
-              ]
-            }
+          interestScore: {
+            $size: { $setIntersection: [{ $ifNull: ["$interestedAreas", []] }, myInterests] }
+          },
+          tagScore: {
+            $size: { $setIntersection: [{ $ifNull: ["$tags", []] }, myTags] }
+          },
+          categoryScore: {
+            $size: { $setIntersection: [{ $ifNull: ["$categories", []] }, myCategories] }
           }
+        }
+      },
+      {
+        $addFields: {
+          matchScore: { $add: ["$interestScore", "$tagScore", "$categoryScore"] }
         }
       },
       { $sort: { matchScore: -1, createdAt: -1 } },
@@ -144,6 +152,20 @@ export const getMyMatches = async (userId) => {
   }
 };
 
+export const getMatchStats = async (userId) => {
+  const totalMatches = await Match.countDocuments({ users: userId });
+  const mutualMatches = await Match.countDocuments({ users: userId, status: "matched" });
+  const privateRooms = await Room.countDocuments({ members: userId, isGroup: false });
+
+  return {
+      userId,
+      totalMatches,
+      mutualMatches,
+      privateRooms,
+      message: "If these counts are zero, no matches exist in the database for this user."
+  };
+};
+
 export const processLike = async (myId, targetUserId) => {
   try {
     let match = await Match.findOne({
@@ -173,6 +195,14 @@ export const processLike = async (myId, targetUserId) => {
       members: [myId, targetUserId],
       isGroup: false,
       status: "active"
+    });
+
+    // Notify the other user about the match
+    await notificationService.createNotification({
+      recipientId: targetUserId,
+      senderId: myId,
+      type: "new_match",
+      message: "matched with you! You can now start chatting."
     });
 
     return { 

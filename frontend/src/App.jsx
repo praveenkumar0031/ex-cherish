@@ -19,6 +19,7 @@ import RoomsPage from "./components/match/RoomsPage.jsx";
 import InterestChat from "./components/chat/InterestedChat.jsx"; 
 import PrivateChat from "./components/chat/PrivateChat.jsx"; 
 import CallsDashboard from "./pages/CallsDashboard.jsx"; 
+import CallRoom from "./pages/CallRoom.jsx";
 
 import "./App.css";
 
@@ -27,10 +28,13 @@ function App() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen text-gray-600 bg-gray-50 font-medium">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          Synchronizing session...
+      <div className="flex items-center justify-center h-screen text-gray-600 bg-slate-50 font-medium">
+        <div className="flex flex-col items-center gap-6">
+          <div className="relative w-16 h-16">
+            <div className="absolute inset-0 border-4 border-blue-100 rounded-full"></div>
+            <div className="absolute inset-0 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+          <span className="text-sm font-bold uppercase tracking-[0.2em] text-blue-600/60">Establishing Secure Sync...</span>
         </div>
       </div>
     );
@@ -46,10 +50,11 @@ function App() {
 
   return (
     <Router>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen flex flex-col bg-slate-50 selection:bg-blue-100 selection:text-blue-900">
         <Navbar />
 
-        <div className="pt-16">
+        {/* Added h-[calc(100vh-73px)] to child containers where needed, but main min-h-screen handles overall scroll */}
+        <main className="flex-1 flex flex-col relative overflow-hidden">
           <Routes>
             {/* PUBLIC ROUTES */}
             <Route path="/" element={<Title title="Welcome to Excherish"><Home /></Title>} />
@@ -93,10 +98,15 @@ function App() {
               element={<ProtectedRoute title="Calls Dashboard"><CallsDashboard /></ProtectedRoute>} 
             />
 
+            <Route 
+              path="/call/:roomId" 
+              element={<ProtectedRoute title="Video Session"><CallRoom /></ProtectedRoute>} 
+            />
+
             {/* DEFAULT REDIRECT */}
             <Route path="*" element={<Navigate to={user ? "/dashboard" : "/"} />} />
           </Routes>
-        </div>
+        </main>
       </div>
     </Router>
   );

@@ -2,7 +2,7 @@ import asyncHandler from "express-async-handler";
 import * as roomService from "../services/roomService.js";
 
 // @desc    Create a new room
-// @route   POST /api/rooms/create
+// @route   POST /api/chat/create
 // @access  Private
 export const createRoom = asyncHandler(async (req, res) => {
   const room = await roomService.createNewRoom(req.user.id, req.body);
@@ -13,7 +13,7 @@ export const createRoom = asyncHandler(async (req, res) => {
 });
 
 // @desc    Update room details
-// @route   PUT /api/rooms/:roomId
+// @route   PUT /api/chat/:roomId
 // @access  Private (Admin only)
 export const updateRoom = asyncHandler(async (req, res) => {
   const room = await roomService.updateRoomDetails(req.user.id, req.params.roomId, req.body);
@@ -21,7 +21,7 @@ export const updateRoom = asyncHandler(async (req, res) => {
 });
 
 // @desc    Join an existing room
-// @route   POST /api/rooms/join/:roomId
+// @route   POST /api/chat/join/:roomId
 // @access  Private
 export const joinRoom = asyncHandler(async (req, res) => {
   const room = await roomService.joinExistingRoom(req.user.id, req.params.roomId);
@@ -29,7 +29,7 @@ export const joinRoom = asyncHandler(async (req, res) => {
 });
 
 // @desc    Manage room members (Add/Remove)
-// @route   POST /api/rooms/:roomId/members
+// @route   POST /api/chat/:roomId/members
 // @access  Private (Admin only)
 export const manageMembers = asyncHandler(async (req, res) => {
   const { userId, action } = req.body;
@@ -38,7 +38,7 @@ export const manageMembers = asyncHandler(async (req, res) => {
 });
 
 // @desc    Find or create a private 1-on-1 room
-// @route   POST /api/rooms/private
+// @route   POST /api/chat/private
 // @access  Private
 export const getOrCreatePrivateChat = asyncHandler(async (req, res) => {
   const room = await roomService.findOrCreatePrivate(req.user.id, req.body.targetUserId);
@@ -46,7 +46,7 @@ export const getOrCreatePrivateChat = asyncHandler(async (req, res) => {
 });
 
 // @desc    Discover all public rooms
-// @route   GET /api/rooms/discover
+// @route   GET /api/chat/discover
 // @access  Public
 export const discoverAllCards = asyncHandler(async (req, res) => {
   const rooms = await roomService.getPublicRooms();
@@ -54,7 +54,7 @@ export const discoverAllCards = asyncHandler(async (req, res) => {
 });
 
 // @desc    Get current user's rooms
-// @route   GET /api/rooms/my-chats
+// @route   GET /api/chat/my-chats
 // @access  Private
 export const getMyRooms = asyncHandler(async (req, res) => {
   const rooms = await roomService.getUserRooms(req.user.id);
@@ -62,7 +62,7 @@ export const getMyRooms = asyncHandler(async (req, res) => {
 });
 
 // @desc    Get all rooms (Global)
-// @route   GET /api/rooms/
+// @route   GET /api/chat/
 // @access  Private
 export const getAllRooms = asyncHandler(async (req, res) => {
   const rooms = await roomService.listAllRooms();

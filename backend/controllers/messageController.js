@@ -5,7 +5,7 @@ import * as messageService from "../services/messageService.js";
 // @route   POST /api/messages/send
 // @access  Private
 export const sendMessage = asyncHandler(async (req, res) => {
-  const message = await messageService.createMessage(req.user.id, req.body);
+  const { message } = await messageService.createMessage(req.user.id, req.body);
   res.status(201).json(message);
 });
 
@@ -14,9 +14,9 @@ export const sendMessage = asyncHandler(async (req, res) => {
 // @access  Private
 export const getMessages = asyncHandler(async (req, res) => {
   const { roomId } = req.params;
-  const { sender, receiver } = req.query;
+  const { sender, receiver, page, limit } = req.query;
 
-  const messages = await messageService.fetchMessages({ roomId, sender, receiver });
+  const messages = await messageService.fetchMessages({ roomId, sender, receiver, page, limit });
   res.json(messages);
 });
 

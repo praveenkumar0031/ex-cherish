@@ -1,5 +1,6 @@
-import Message from "../models/messageModel.js";
+import Message from "../models/Message.js";
 import Room from "../models/Room.js";
+import * as notificationService from "./notificationService.js";
 
 export const createMessage = async (senderId, messageData) => {
   const { text, roomId, receiverId } = messageData;
@@ -9,10 +10,11 @@ export const createMessage = async (senderId, messageData) => {
     text,
   };
 
+  let notification = null;
+
   if (roomId) {
     const room = await Room.findById(roomId);
     if (!room) throw new Error("Chat room not found");
-    // Compatibility check for members: some models might use 'members', others 'users'
     const members = room.members || room.users || [];
     if (!members.some(id => id.toString() === senderId.toString())) {
       throw new Error("You are not a member of this chat");
@@ -20,16 +22,26 @@ export const createMessage = async (senderId, messageData) => {
     data.room = roomId;
   } else if (receiverId) {
     data.receiver = receiverId;
+    
+    // Notify the receiver for private messages
+    notification = await notificationService.createNotification({
+      recipientId: receiverId,
+      senderId: senderId,
+      type: "new_message",
+      message: "sent you a new message."
+    });
   } else {
     throw new Error("Either roomId or receiverId is required");
   }
 
   const message = await Message.create(data);
-  return await message.populate("sender", "name profilePic");
+  const populatedMessage = await message.populate("sender", "name profilePic");
+  
+  return { message: populatedMessage, notification };
 };
 
 export const fetchMessages = async (params) => {
-  const { roomId, sender, receiver } = params;
+  const { roomId, sender, receiver, page = 1, limit = 100 } = params;
 
   let query = {};
   
@@ -46,7 +58,14 @@ export const fetchMessages = async (params) => {
     throw new Error("Missing parameters for message retrieval");
   }
 
-  return await Message.find(query)
+  const skip = (page - 1) * limit;
+
+  // We sort by createdAt: -1 to get the newest first, then limit, then sort back to chronological order
+  const messages = await Message.find(query)
     .populate("sender", "name profilePic")
-    .sort({ createdAt: 1 });
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(parseInt(limit));
+
+  return messages.reverse();
 };

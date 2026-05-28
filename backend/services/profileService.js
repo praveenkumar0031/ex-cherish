@@ -1,5 +1,5 @@
-import Profile from "../models/profileModel.js";
-import User from "../models/userModel.js";
+import Profile from "../models/Profile.js";
+import User from "../models/User.js";
 
 const formatCredit = (credit) => {
   if (!credit) return 0;
@@ -23,24 +23,31 @@ export const fetchProfile = async (userId) => {
     profilePic: user.profilePic ? `http://localhost:5000${user.profilePic}` : "",
     dob: profile.dob || "",
     mobile: profile.mobile || "",
+    bio: profile.bio || "",
+    tags: profile.tags || [],
+    categories: profile.categories || [],
     interestedAreas: profile.interestedAreas || [],
     credit: formatCredit(profile.credit),
   };
 };
 
 export const modifyProfile = async (userId, updateData, file) => {
-  let { name, email, dob, mobile, interestedAreas, credit } = updateData;
+  let { name, email, dob, mobile, bio, tags, categories, interestedAreas, credit } = updateData;
 
-  if (typeof interestedAreas === "string") {
-    try {
-      interestedAreas = JSON.parse(interestedAreas);
-    } catch {
-      interestedAreas = [interestedAreas];
+  const parseArray = (val) => {
+    if (typeof val === "string") {
+      try {
+        return JSON.parse(val);
+      } catch {
+        return [val];
+      }
     }
-  }
-  if (!Array.isArray(interestedAreas)) {
-    interestedAreas = [];
-  }
+    return Array.isArray(val) ? val : [];
+  };
+
+  interestedAreas = parseArray(interestedAreas);
+  tags = parseArray(tags);
+  categories = parseArray(categories);
 
   const updateUserData = { name, email };
   if (file) {
@@ -50,7 +57,7 @@ export const modifyProfile = async (userId, updateData, file) => {
   const updatedUser = await User.findByIdAndUpdate(userId, updateUserData, { new: true });
   const updatedProfile = await Profile.findOneAndUpdate(
     { user: userId },
-    { dob, mobile, interestedAreas, credit },
+    { dob, mobile, bio, tags, categories, interestedAreas, credit },
     { new: true, upsert: true }
   );
 
@@ -84,6 +91,9 @@ export const fetchAllProfiles = async () => {
       profilePic: p.user.profilePic ? `http://localhost:5000${p.user.profilePic}` : "",
       dob: p.dob || "",
       mobile: p.mobile || "",
+      bio: p.bio || "",
+      tags: p.tags || [],
+      categories: p.categories || [],
       interestedAreas: p.interestedAreas || [],
       credit: formatCredit(p.credit),
     };

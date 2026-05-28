@@ -15,7 +15,7 @@ const notificationSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ["incoming_call", "call_accepted", "call_rejected", "call_scheduled", "call_reminder", "missed_call"],
+      enum: ["incoming_call", "call_accepted", "call_rejected", "call_scheduled", "call_reminder", "missed_call", "new_match", "new_message"],
       required: true
     },
     relatedCall: {

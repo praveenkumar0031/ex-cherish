@@ -21,9 +21,9 @@ API.interceptors.response.use(
   (error) => {
     if (error.response && error.response.status === 401) {
       // Handle unauthorized (e.g., redirect to login or clear storage)
-      // localStorage.removeItem("token");
-      // localStorage.removeItem("user");
-      // window.location.href = "/login";
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.location.href = "/login";
     }
     return Promise.reject(error);
   }

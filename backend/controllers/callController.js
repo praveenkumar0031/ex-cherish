@@ -45,6 +45,11 @@ export const updateCallStatus = asyncHandler(async (req, res) => {
   res.json(result);
 });
 
+export const sendCallReminder = asyncHandler(async (req, res) => {
+  const notification = await callService.sendCallReminder(req.user.id, req.params.id);
+  res.json(notification);
+});
+
 export const getMyCalls = asyncHandler(async (req, res) => {
   const calls = await callService.getUserCalls(req.user.id);
   res.json(calls);

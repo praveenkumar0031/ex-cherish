@@ -1,5 +1,5 @@
 import Call from "../models/Call.js";
-import Notification from "../models/Notification.js";
+import * as notificationService from "./notificationService.js";
 import Match from "../models/Match.js";
 import mongoose from "mongoose";
 
@@ -65,9 +65,9 @@ export const createScheduledCall = async (callerId, receiverId, scheduledFor) =>
     status: "scheduled"
   });
 
-  const notification = await Notification.create({
-    recipient: receiverId,
-    sender: callerId,
+  const notification = await notificationService.createNotification({
+    recipientId: receiverId,
+    senderId: callerId,
     type: "call_scheduled",
     relatedCall: call._id,
     message: "invited you to a scheduled video call."
@@ -95,9 +95,9 @@ export const updateCallStatus = async (userId, callId, status) => {
   let notif = null;
   if (call.callType === "scheduled" && (status === "accepted" || status === "rejected")) {
       const notificationType = status === "accepted" ? "call_accepted" : "call_rejected";
-      notif = await Notification.create({
-        recipient: call.caller,
-        sender: userId,
+      notif = await notificationService.createNotification({
+        recipientId: call.caller,
+        senderId: userId,
         type: notificationType,
         relatedCall: call._id,
         message: `${status} your video call invitation.`
@@ -105,6 +105,25 @@ export const updateCallStatus = async (userId, callId, status) => {
   }
 
   return { call, notification: notif };
+};
+
+export const sendCallReminder = async (userId, callId) => {
+    const call = await Call.findById(callId).populate("caller receiver");
+    if (!call) throw new Error("Call not found");
+
+    const isCaller = call.caller._id.toString() === userId.toString();
+    const recipientId = isCaller ? call.receiver._id : call.caller._id;
+    const senderId = userId;
+
+    const notification = await notificationService.createNotification({
+        recipientId,
+        senderId,
+        type: "call_reminder",
+        relatedCall: call._id,
+        message: "sent you a reminder for your upcoming video call."
+    });
+
+    return notification;
 };
 
 export const getUserCalls = async (userId) => {

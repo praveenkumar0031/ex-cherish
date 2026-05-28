@@ -8,6 +8,7 @@ const messageSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // Compound index for faster chat history retrieval
-messageSchema.index({ createdAt: 1 });
+messageSchema.index({ room: 1, createdAt: -1 });
+messageSchema.index({ sender: 1, receiver: 1, createdAt: -1 });
 
 export default mongoose.model('Message', messageSchema);

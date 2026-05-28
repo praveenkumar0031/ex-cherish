@@ -37,19 +37,6 @@ export const getMyMatches = asyncHandler(async (req, res) => {
 // @route   GET /api/matches/debug-stats
 // @access  Private
 export const getMatchStats = asyncHandler(async (req, res) => {
-    const userId = req.user.id;
-    const Match = (await import("../models/Match.js")).default;
-    const Room = (await import("../models/Room.js")).default;
-
-    const totalMatches = await Match.countDocuments({ users: userId });
-    const mutualMatches = await Match.countDocuments({ users: userId, status: "matched" });
-    const privateRooms = await Room.countDocuments({ members: userId, isGroup: false });
-
-    res.json({
-        userId,
-        totalMatches,
-        mutualMatches,
-        privateRooms,
-        message: "If these counts are zero, no matches exist in the database for this user."
-    });
+    const stats = await matchService.getMatchStats(req.user.id);
+    res.json(stats);
 });

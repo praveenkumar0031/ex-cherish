@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { MessageSquare, Users, Sparkles, Video, Search, Zap, ArrowRight, Heart } from "lucide-react";
-// eslint-disable-next-line no-unused-vars
-import { motion } from "framer-motion";
+import { MessageSquare, Users, Sparkles, Video, Search, Zap, ArrowRight, Heart, Bell, Calendar, ShieldCheck } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 import API from "../../services/api";
 
@@ -14,12 +13,14 @@ const Dashboard = () => {
     matches: 0,
     connections: 0
   });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
+        setLoading(true);
         const [roomsRes, matchesRes] = await Promise.all([
-          API.get("rooms/my-chats"),
+          API.get("chat/my-chats"),
           API.get("matches/my-matches")
         ]);
         
@@ -29,10 +30,12 @@ const Dashboard = () => {
         setStats({
           rooms: rooms.filter(r => r.isGroup).length,
           matches: matches.filter(m => m.status === "matched").length,
-          connections: matches.length // includes matched, liked_you, etc.
+          connections: matches.length
         });
       } catch (err) {
         console.error("Dashboard data fetch failed", err);
+      } finally {
+        setLoading(false);
       }
     };
     fetchDashboardData();
@@ -43,52 +46,90 @@ const Dashboard = () => {
     show: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1
+        staggerChildren: 0.1,
+        delayChildren: 0.2
       }
     }
   };
 
   const item = {
     hidden: { y: 20, opacity: 0 },
-    show: { y: 0, opacity: 1 }
+    show: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 100 } }
   };
 
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-73px)] gap-6 bg-slate-50">
+        <div className="relative w-16 h-16">
+          <div className="absolute inset-0 border-4 border-blue-100 rounded-full"></div>
+          <div className="absolute inset-0 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+        <p className="text-slate-400 font-black uppercase tracking-[0.2em] text-[10px]">Syncing Dashboard...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-[#fafbff] relative overflow-hidden">
+    <div className="min-h-[calc(100vh-73px)] bg-[#f8fafc] relative overflow-x-hidden pb-20">
       
-      {/* Background Blobs */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-100/50 rounded-full blur-[120px] -z-10 translate-x-1/2 -translate-y-1/2" />
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-purple-100/50 rounded-full blur-[100px] -z-10 -translate-x-1/2 translate-y-1/2" />
+      {/* Premium Background Elements */}
+      <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-blue-100/30 rounded-full blur-[120px] -z-10 translate-x-1/3 -translate-y-1/3" />
+      <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-indigo-100/30 rounded-full blur-[100px] -z-10 -translate-x-1/3 translate-y-1/3" />
+      <div className="absolute inset-0 opacity-[0.015] pointer-events-none" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/cubes.png")' }} />
 
       <div className="max-w-7xl mx-auto px-6 py-12">
         
         {/* Header Section */}
-        <header className="mb-12">
+        <header className="mb-16 flex flex-col md:flex-row md:items-end justify-between gap-8">
+          <div className="max-w-2xl">
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }} 
+              animate={{ opacity: 1, x: 0 }}
+              className="flex items-center gap-3 mb-4"
+            >
+              <div className="px-4 py-1.5 bg-slate-900 text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-full shadow-xl shadow-slate-900/10">
+                Network Command
+              </div>
+              <span className="text-slate-400 font-bold text-[11px] uppercase tracking-widest flex items-center gap-2">
+                <Calendar size={12} className="text-blue-500" /> {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+              </span>
+            </motion.div>
+            <motion.h1 
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-5xl md:text-6xl font-[900] text-slate-900 leading-[1.1] tracking-tighter"
+            >
+              System <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Operational</span>.
+            </motion.h1>
+            <motion.p 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="text-slate-500 mt-6 text-xl font-medium leading-relaxed"
+            >
+              Welcome back, <span className="text-slate-900 font-bold">{user?.name?.split(' ')[0]}</span>. Your collaborative network is scaling. Explore new nodes and finalize pending syncs.
+            </motion.p>
+          </div>
+
           <motion.div 
-            initial={{ opacity: 0, x: -20 }} 
-            animate={{ opacity: 1, x: 0 }}
-            className="flex items-center gap-3 mb-2"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex items-center gap-4 bg-white p-2 rounded-[2.5rem] shadow-2xl shadow-slate-900/5 border border-slate-100"
           >
-            <div className="px-3 py-1 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest rounded-full">
-              Personal Hub
-            </div>
-            <span className="text-gray-400 font-medium text-sm">• {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</span>
+             <div className="w-14 h-14 rounded-full overflow-hidden border-4 border-slate-50 shadow-inner">
+                {user?.profilePic ? (
+                    <img src={user.profilePic} className="w-full h-full object-cover" alt=""/>
+                ) : (
+                    <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-300"><User size={24}/></div>
+                )}
+             </div>
+             <div className="pr-6">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Session</p>
+                <p className="text-sm font-black text-slate-900 flex items-center gap-2">
+                    Verified Node <ShieldCheck size={14} className="text-green-500" />
+                </p>
+             </div>
           </motion.div>
-          <motion.h1 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-4xl md:text-5xl font-black text-gray-900 leading-tight"
-          >
-            Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">{user?.name?.split(' ')[0]}</span>.
-          </motion.h1>
-          <motion.p 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-gray-500 mt-3 text-lg font-medium"
-          >
-            Your network is growing. Here's what's happening today.
-          </motion.p>
         </header>
 
         {/* Stats Grid */}
@@ -96,131 +137,159 @@ const Dashboard = () => {
           variants={container}
           initial="hidden"
           animate="show"
-          className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16"
+          className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20"
         >
-          <motion.div variants={item} className="bg-white p-8 rounded-[2rem] shadow-sm border border-gray-100 flex items-center justify-between group hover:shadow-xl hover:shadow-blue-900/5 transition-all duration-500">
-            <div>
-              <p className="text-gray-400 text-sm font-bold uppercase tracking-wider mb-1">Active Matches</p>
-              <h3 className="text-4xl font-black text-gray-900">{stats.matches}</h3>
-            </div>
-            <div className="w-14 h-14 bg-pink-50 text-pink-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Heart size={28} fill="currentColor" />
-            </div>
-          </motion.div>
-
-          <motion.div variants={item} className="bg-white p-8 rounded-[2rem] shadow-sm border border-gray-100 flex items-center justify-between group hover:shadow-xl hover:shadow-blue-900/5 transition-all duration-500">
-            <div>
-              <p className="text-gray-400 text-sm font-bold uppercase tracking-wider mb-1">Interest Groups</p>
-              <h3 className="text-4xl font-black text-gray-900">{stats.rooms}</h3>
-            </div>
-            <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Users size={28} />
-            </div>
-          </motion.div>
-
-          <motion.div variants={item} className="bg-white p-8 rounded-[2rem] shadow-sm border border-gray-100 flex items-center justify-between group hover:shadow-xl hover:shadow-blue-900/5 transition-all duration-500">
-            <div>
-              <p className="text-gray-400 text-sm font-bold uppercase tracking-wider mb-1">Connections</p>
-              <h3 className="text-4xl font-black text-gray-900">{stats.connections}</h3>
-            </div>
-            <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Users size={28} />
-            </div>
-          </motion.div>
+          <StatsCard 
+            variants={item}
+            label="Reciprocal Matches" 
+            value={stats.matches} 
+            icon={Heart} 
+            color="pink" 
+            trend="+12% sync rate"
+          />
+          <StatsCard 
+            variants={item}
+            label="Knowledge Groups" 
+            value={stats.rooms} 
+            icon={Users} 
+            color="indigo" 
+            trend="Active clusters"
+          />
+          <StatsCard 
+            variants={item}
+            label="Total Node Connections" 
+            value={stats.connections} 
+            icon={Zap} 
+            color="blue" 
+            trend="Stable latency"
+          />
         </motion.div>
 
-        {/* Quick Actions */}
+        {/* Action Matrix */}
         <section>
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-black text-gray-900 tracking-tight">Quick Actions</h2>
-            <div className="h-px flex-1 bg-gray-100 mx-8" />
+          <div className="flex items-center gap-6 mb-12">
+            <h2 className="text-xs font-black text-slate-900 uppercase tracking-[0.3em] whitespace-nowrap">Core Operations</h2>
+            <div className="h-px flex-1 bg-gradient-to-r from-slate-200 to-transparent" />
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            
-            <motion.div 
-              whileHover={{ y: -8 }}
-              onClick={() => navigate("/discover")}
-              className="bg-gradient-to-br from-blue-600 to-blue-700 p-8 rounded-[2.5rem] text-white shadow-xl shadow-blue-200 cursor-pointer group"
-            >
-              <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mb-6">
-                <Search size={24} />
-              </div>
-              <h3 className="text-xl font-black mb-2">Discover</h3>
-              <p className="text-blue-100 text-sm font-medium mb-8">Find people with similar interests and start connecting.</p>
-              <div className="flex items-center gap-2 text-sm font-black group-hover:gap-4 transition-all uppercase tracking-widest">
-                Explore <ArrowRight size={16} />
-              </div>
-            </motion.div>
-
-            <motion.div 
-              whileHover={{ y: -8 }}
-              onClick={() => navigate("/rooms")}
-              className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100 cursor-pointer group hover:border-indigo-100 transition-all"
-            >
-              <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-6">
-                <MessageSquare size={24} />
-              </div>
-              <h3 className="text-xl font-black text-gray-900 mb-2">My Chats</h3>
-              <p className="text-gray-500 text-sm font-medium mb-8">Continue your conversations in private and group chats.</p>
-              <div className="flex items-center gap-2 text-sm font-black text-indigo-600 group-hover:gap-4 transition-all uppercase tracking-widest">
-                Open Messenger <ArrowRight size={16} />
-              </div>
-            </motion.div>
-
-            <motion.div 
-              whileHover={{ y: -8 }}
-              onClick={() => navigate("/rooms")}
-              className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100 cursor-pointer group hover:border-purple-100 transition-all"
-            >
-              <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center mb-6">
-                <Zap size={24} />
-              </div>
-              <h3 className="text-xl font-black text-gray-900 mb-2">Skill Swap</h3>
-              <p className="text-gray-500 text-sm font-medium mb-8">Join interest groups and share your expertise with others.</p>
-              <div className="flex items-center gap-2 text-sm font-black text-purple-600 group-hover:gap-4 transition-all uppercase tracking-widest">
-                Join Groups <ArrowRight size={16} />
-              </div>
-            </motion.div>
-
-            <motion.div 
-              whileHover={{ y: -8 }}
-              onClick={() => navigate("/profile")}
-              className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100 cursor-pointer group hover:border-gray-300 transition-all"
-            >
-              <div className="w-12 h-12 bg-gray-50 text-gray-900 rounded-2xl flex items-center justify-center mb-6">
-                <Sparkles size={24} />
-              </div>
-              <h3 className="text-xl font-black text-gray-900 mb-2">My Profile</h3>
-              <p className="text-gray-500 text-sm font-medium mb-8">Keep your profile updated to get better recommendations.</p>
-              <div className="flex items-center gap-2 text-sm font-black text-gray-900 group-hover:gap-4 transition-all uppercase tracking-widest">
-                Manage Profile <ArrowRight size={16} />
-              </div>
-            </motion.div>
-
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <ActionCard 
+                onClick={() => navigate("/discover")}
+                icon={Search}
+                title="Discovery"
+                desc="Algorithmically find new knowledge partners."
+                primary
+            />
+            <ActionCard 
+                onClick={() => navigate("/rooms")}
+                icon={MessageSquare}
+                title="Messenger"
+                desc="High-bandwidth secure communication."
+            />
+            <ActionCard 
+                onClick={() => navigate("/rooms")}
+                icon={Zap}
+                title="Skill Swap"
+                desc="Initiate expertise transfer protocols."
+            />
+            <ActionCard 
+                onClick={() => navigate("/profile")}
+                icon={Sparkles}
+                title="Identity"
+                desc="Manage your global network presence."
+            />
           </div>
         </section>
       </div>
 
-      <footer className="bg-white border-t border-gray-100 py-10 mt-auto">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
-           <div className="flex items-center gap-2">
-              <div className="bg-blue-600 p-1.5 rounded-lg">
-                <Sparkles className="text-white" size={16} />
+      <footer className="bg-white/50 backdrop-blur-md border-t border-slate-100 py-12 mt-20">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
+           <div className="flex items-center gap-3">
+              <div className="bg-slate-900 p-2 rounded-xl">
+                <Sparkles className="text-white" size={18} />
               </div>
-              <span className="font-black text-gray-900 uppercase tracking-tighter">Excherish</span>
+              <span className="font-[900] text-slate-900 uppercase tracking-tighter text-xl">Excherish</span>
            </div>
-           <p className="text-gray-400 text-sm font-medium">© {new Date().getFullYear()} EXCHERISH. Built for the modern network.</p>
-           <div className="flex gap-8 text-xs font-bold text-gray-400 uppercase tracking-widest">
-              <a href="#" className="hover:text-blue-600 transition-colors">Privacy</a>
-              <a href="#" className="hover:text-blue-600 transition-colors">Terms</a>
-              <a href="#" className="hover:text-blue-600 transition-colors">Support</a>
+           <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">© {new Date().getFullYear()} EXCHERISH OS. All rights reserved.</p>
+           <div className="flex gap-10 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+              <a href="#" className="hover:text-blue-600 transition-colors">Security</a>
+              <a href="#" className="hover:text-blue-600 transition-colors">Protocol</a>
+              <a href="#" className="hover:text-blue-600 transition-colors">Uplink</a>
            </div>
         </div>
       </footer>
 
     </div>
   );
+};
+
+const StatsCard = ({ label, value, icon: Icon, color, trend, variants }) => {
+    const colorMap = {
+        pink: "bg-pink-50 text-pink-500",
+        indigo: "bg-indigo-50 text-indigo-600",
+        blue: "bg-blue-50 text-blue-600"
+    };
+
+    return (
+        <motion.div 
+            variants={variants}
+            className="bg-white p-10 rounded-[3.5rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.04)] border border-slate-100 group hover:border-blue-200 transition-all duration-500"
+        >
+            <div className="flex items-start justify-between mb-8">
+                <div className={`w-16 h-16 ${colorMap[color]} rounded-[1.8rem] flex items-center justify-center group-hover:scale-110 transition-transform duration-500 shadow-inner`}>
+                    <Icon size={32} strokeWidth={2.5} />
+                </div>
+                <div className="text-right">
+                    <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em] mb-1">Status</p>
+                    <span className="text-[10px] font-black text-green-500 uppercase tracking-widest flex items-center gap-1.5 justify-end">
+                        <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" /> Live
+                    </span>
+                </div>
+            </div>
+            <div>
+              <p className="text-slate-400 text-[11px] font-black uppercase tracking-widest mb-2">{label}</p>
+              <h3 className="text-5xl font-[900] text-slate-900 tracking-tighter">{value}</h3>
+              <p className="text-slate-400 text-[10px] font-bold mt-4 flex items-center gap-2 italic">
+                  Node Trend: <span className="text-blue-600 not-italic font-black">{trend}</span>
+              </p>
+            </div>
+        </motion.div>
+    );
+};
+
+const ActionCard = ({ icon: Icon, title, desc, onClick, primary = false }) => {
+    return (
+        <motion.div 
+            whileHover={{ y: -10, scale: 1.02 }}
+            onClick={onClick}
+            className={`p-10 rounded-[3rem] cursor-pointer group transition-all duration-500 relative overflow-hidden shadow-2xl shadow-transparent hover:shadow-slate-900/10 ${
+                primary 
+                ? "bg-slate-900 text-white" 
+                : "bg-white text-slate-900 border border-slate-100 hover:border-blue-100"
+            }`}
+        >
+            {primary && (
+                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/20 rounded-full blur-3xl -mr-16 -mt-16" />
+            )}
+            
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-8 transition-all duration-500 shadow-inner ${
+                primary ? "bg-white/10 text-white group-hover:bg-blue-600" : "bg-slate-50 text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-600"
+            }`}>
+                <Icon size={28} strokeWidth={2.5} />
+            </div>
+            
+            <h3 className="text-2xl font-[900] tracking-tight mb-3 group-hover:text-blue-500 transition-colors">{title}</h3>
+            <p className={`text-sm font-medium mb-10 leading-relaxed ${primary ? "text-slate-400" : "text-slate-500"}`}>
+                {desc}
+            </p>
+            
+            <div className={`flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500 ${
+                primary ? "text-white group-hover:gap-6" : "text-blue-600 group-hover:gap-6"
+            }`}>
+                Connect <ArrowRight size={16} strokeWidth={3} />
+            </div>
+        </motion.div>
+    );
 };
 
 export default Dashboard;

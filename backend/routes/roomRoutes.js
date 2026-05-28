@@ -19,7 +19,7 @@ router.put("/:roomId", protect, updateRoom);
 router.post("/join/:roomId", protect, joinRoom);
 router.post("/:roomId/members", protect, manageMembers);
 router.get("/my-chats", protect, getMyRooms);
-router.get("/discover", discoverAllCards);
+router.get("/discover", protect, discoverAllCards);
 router.post("/private", protect, getOrCreatePrivateChat);
 
 export default router;
