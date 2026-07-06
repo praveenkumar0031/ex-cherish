@@ -1,5 +1,6 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
 import { useAuth } from "./context/AuthContext";
 
 import Title from "./components/title/Title";
@@ -50,6 +51,7 @@ function App() {
 
   return (
     <Router>
+      <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
       <div className="min-h-screen flex flex-col bg-slate-50 selection:bg-blue-100 selection:text-blue-900">
         <Navbar />
 
@@ -64,7 +66,7 @@ function App() {
             />
             <Route
               path="/register"
-              element={user ? <Navigate to="/dashboard" /> : <Title title="Register"><Register /></Title>}
+              element={user ? <Navigate to="/dashboard" /> : <Title title="Create Account"><Register /></Title>}
             />
 
             {/* PROTECTED ROUTES */}

@@ -1,30 +1,39 @@
 import axios from "axios";
 
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+
 const API = axios.create({
-  // Use VITE_BACKEND_URL if provided, otherwise default to localhost:5000
-  // We ensure it ends with /api/ so all calls can just use relative paths
-  baseURL: (import.meta.env.VITE_BACKEND_URL || "http://localhost:5000") + "/api/",
+  baseURL: `${BACKEND_URL}/api/`,
+  withCredentials: true,
 });
 
-// Add a request interceptor to attach the token
+// Attach token to every request
 API.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
-});
+}, (error) => Promise.reject(error));
 
-// Add a response interceptor to handle global errors
+// BUG FIX: Previous 401 interceptor caused an infinite redirect loop:
+// If /api/auth/login returned 401 (wrong password), the interceptor would
+// clear storage and redirect to /login — which then re-triggers the request
+// cycle. Now we skip the auto-logout for auth routes.
 API.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
-      // Handle unauthorized (e.g., redirect to login or clear storage)
+    const isAuthRoute = error.config?.url?.includes("auth/login") ||
+                        error.config?.url?.includes("auth/register");
+
+    if (error.response?.status === 401 && !isAuthRoute) {
+      // Token expired or invalid for a protected route — force logout
       localStorage.removeItem("token");
       localStorage.removeItem("user");
-      window.location.href = "/login";
+      // Use replace to avoid back-button loop
+      window.location.replace("/login");
     }
+
     return Promise.reject(error);
   }
 );
