@@ -21,6 +21,9 @@ import InterestChat from "./components/chat/InterestedChat.jsx";
 import PrivateChat from "./components/chat/PrivateChat.jsx"; 
 import CallsDashboard from "./pages/CallsDashboard.jsx"; 
 import CallRoom from "./pages/CallRoom.jsx";
+import FeedPage from "./pages/FeedPage.jsx";
+import CreatePostPage from "./pages/CreatePostPage.jsx";
+import PostDetailPage from "./pages/PostDetailPage.jsx";
 
 import "./App.css";
 
@@ -104,6 +107,12 @@ function App() {
               path="/call/:roomId" 
               element={<ProtectedRoute title="Video Session"><CallRoom /></ProtectedRoute>} 
             />
+
+            {/* KNOWLEDGE SHARING ROUTES */}
+            <Route path="/feed" element={<ProtectedRoute title="Knowledge Feed"><FeedPage /></ProtectedRoute>} />
+            <Route path="/post/create" element={<ProtectedRoute title="Create Post"><CreatePostPage /></ProtectedRoute>} />
+            <Route path="/post/:id/edit" element={<ProtectedRoute title="Edit Post"><CreatePostPage /></ProtectedRoute>} />
+            <Route path="/post/:id" element={<ProtectedRoute title="Post"><PostDetailPage /></ProtectedRoute>} />
 
             {/* DEFAULT REDIRECT */}
             <Route path="*" element={<Navigate to={user ? "/dashboard" : "/"} />} />

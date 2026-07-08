@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Sparkles, User, LogOut, Settings, Users, Search, Video, Bell, Menu, X as CloseIcon } from "lucide-react";
+import { Sparkles, User, LogOut, Settings, Users, Search, Video, Bell, Menu, X as CloseIcon, BookOpen } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useSocket } from "../../context/SocketContext";
 import API from "../../services/api";
@@ -127,6 +127,7 @@ const Navbar = () => {
         {user && (
           <div className="hidden md:flex items-center gap-1">
             <NavLink to="/dashboard" icon={Users} label="Dashboard" />
+            <NavLink to="/feed" icon={BookOpen} label="Feed" />
             <NavLink to="/discover" icon={Search} label="Discover" />
             <NavLink to="/rooms" icon={Users} label="Groups" />
             <NavLink to="/calls" icon={Video} label="Calls" />

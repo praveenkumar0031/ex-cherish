@@ -17,6 +17,8 @@ import uploadRoutes from "./routes/uploadRoutes.js";
 import matchRoutes from "./routes/matchRoutes.js";
 import callRoutes from "./routes/callRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
+import postRoutes from "./routes/postRoutes.js";
+import commentRoutes from "./routes/commentRoutes.js";
 
 dotenv.config();
 
@@ -60,6 +62,8 @@ app.use("/api/users", profileRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/calls", callRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/posts", postRoutes);
+app.use("/api/comments", commentRoutes);
 
 app.get("/", (req, res) => {
   res.send("Excherish API is running smoothly...");
